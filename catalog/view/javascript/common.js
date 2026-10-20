@@ -257,7 +257,7 @@ function etmAddtocart(div_id){
                         requestedtime_check();
                         //smartoffers(); 
                     });
-                    $('.productdatas-'+json['product_id']+' .remove').html('<div class="fa fa-minus-circle" title="-1" onclick="removeditem('+"'"+json['iky']+"'"+',,'+$('.productdatas-'+json['product_id']+' .quantity').html()+','+json['product_id']+');"></div>');
+                    $('.productdatas-'+json['product_id']+' .remove').html('<div class="fa fa-minus-circle" title="-1" onclick="removeditem('+"'"+json['iky']+"'"+','+$('.productdatas-'+json['product_id']+' .quantity').html()+','+json['product_id']+');"></div>');
                     window.dataLayer.push({
                         event: "add_to_cart",
                         ecommerce: {

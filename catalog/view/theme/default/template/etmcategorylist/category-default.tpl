@@ -10,8 +10,11 @@
 <script type="text/javascript">
     $(function() {
         carprogresscount += 1;
-        if(typeof(Storage) !== "undefined" && sessionStorage.cached_cat_<?php echo $category_layout;?>) {
-            $('#cat_sub_<?php echo $category_layout; ?>').html(sessionStorage.cached_cat_<?php echo $category_layout;?>);
+        // etmMenuCache is defined in etmlist.tpl; fall back to "no cache" if it is missing.
+        var menucache = (typeof etmMenuCache !== "undefined") ? etmMenuCache : null;
+        var cachedcat = menucache ? menucache.get('cached_cat_<?php echo $category_layout;?>') : null;
+        if(cachedcat) {
+            $('#cat_sub_<?php echo $category_layout; ?>').html(cachedcat);
             carprogresscount -= 1;
             carprogressshow();
         }
@@ -20,8 +23,9 @@
                 $('#cat_sub_<?php echo $category_layout; ?>').html(data);
                 carprogresscount -= 1;
                 carprogressshow();
-                if(typeof(Storage) !== "undefined"){
-                    sessionStorage.cached_cat_<?php echo $category_layout;?> = data;
+                // Optional cache write, after the UI update; storage errors are swallowed by etmMenuCache.
+                if(menucache){
+                    menucache.set('cached_cat_<?php echo $category_layout;?>', data);
                 }
             }).fail(function() {
                  // alert( "error" );
