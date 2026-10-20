@@ -1,0 +1,98 @@
+<!--Product Image & Plus -->
+
+<div class="col-sm-12 col-md-3 product-info_simple <?php echo(($options)?'':'without_opt');?>" id="product-info_<?php echo $parent_category_id.'_'.$product_id; ?>" >
+ <div class="img_flexer">
+
+    <div class="product-img-left">
+    <div class="product_image">
+    <img src="<?php echo $thumb; ?>" />
+
+        <?php //echo $special_deal; ?>
+    <input type="hidden" name="product_id" size="2" value="<?php echo $product_id; ?>" />
+                <?php if($options) { ?>
+                  <div id="option-<?php echo $options[0]['product_option_id']; ?>" class="option">
+                      <div id="product-det_<?php echo $product_id.'_1000000' ?>" class="product-det_<?php echo $product_id.'_1000000'; ?>" style="width:100%;">   
+                          <input type="hidden" name="product_id" size="2" value="<?php echo $product_id; ?>" />
+                          <div class="productdetails" value="<?php echo $option_value['product_option_value_id']; ?>">
+                              <div class="product_optionname">Choose Options</div>
+                              
+                              <div class="modal fade etm-popup-prodts" tabindex="-1" role="dialog" id="dialog_<?php echo $product_id; ?>_1000000" aria-labelledby="<?php echo $name; ?>">
+                                  <div class="modal-dialog modal-lg" role="document">
+                                      <div class="modal-content"></div>
+                                  </div>
+                              </div>
+                                  <input type="button" value="Add to cart +" class="popupbuttonall button" prod_id="<?php echo $product_id; ?>_1000000" id="popupbuttonn_<?php echo $product_id; ?>_1000000" divide="<?php echo $product_id; ?>_1000000" > 
+                                            
+                          </div>
+                      </div>
+                  </div>
+
+                <?php  } 
+                else{
+                ?>
+                <div class="option">
+                <div class="productdetails">
+                <a id="<?php echo $product_id; ?>" div_id="product-info_<?php echo $parent_category_id.'_'.$product_id; ?>" class="button-cart_wop button">Add to cart +</a> 
+                </div>
+                </div>
+                <?php
+                }
+                ?>
+
+
+    </div>
+  </div>
+
+  <div class="product-img-right">
+    <div class="product_name">
+    <?php echo $name; ?>
+    <?php
+                        if($hot!=''){
+                            $allhot = explode(' ',$hot);
+                            foreach($allhot as $ht){
+                            ?>
+                            <span class="<?php echo 'haschillies_'.$ht; ?>"></span>
+                            <?php 
+                            }
+                        }
+                    ?>   
+                    </div>
+         <div class="product_description">
+                    <?php if($description!='..') { echo $description; }  ?> 
+                </div>
+
+
+    <?php //echo $special_deal; ?>
+
+                <?php if($options) { ?>
+ 
+    
+                     
+
+                              
+             
+                              <div class="product_option_price">
+                                  <?php  
+                                              echo $curr_symbol.''.number_format(($org_price),2);
+                                      ?> </div>    
+  
+                                            
+                 
+              
+
+                <?php  } 
+                else{
+                ?>
+                <div class="option">
+                <div class="productdetails">
+                <div class="product_option_price"><?php echo $price; ?></div> 
+                </div>
+                </div>
+                <?php
+                }
+                ?>
+
+
+  </div>
+  </div>
+</div>

@@ -1,0 +1,122 @@
+/*
+ * Stripe Payments Extension CSS
+ */
+
+.credit-cards {
+    margin-top: 10px;
+    position: relative;
+    width: 332px;
+    height: 26px;
+}
+.credit-cards:before, .credit-cards:after {
+    background-image: url(../image/stripe-cc-logos.png);
+    width: 100%;
+    height: 100%;
+    background-repeat: no-repeat;
+    left: 0;
+    top: 0;
+    content: "";
+    position: absolute;
+}
+.credit-cards:before {
+    z-index: 1;
+    opacity: 0.3;
+}
+.credit-cards:after {
+    z-index: 2;
+    opacity: 1;
+    background-clip: content-box;
+    padding: 0;
+    width: 0;
+}
+.credit-cards.visa:after {
+    width: 60px;
+}
+.credit-cards.mastercard:after {
+    width: 48px;
+    padding-left: 60px;
+}
+.credit-cards.americanexpress:after {
+    width: 46px;
+    padding-left: 108px;
+}
+.credit-cards.jcb:after {
+    width: 46px;
+    padding-left: 154px;
+}
+.credit-cards.discover:after {
+    width: 46px;
+    padding-left: 202px;
+}
+.credit-cards.dinersclub:after {
+    width: 84px;
+    padding-left: 248px;
+}
+.payment-content-area {
+        margin: 5px 2px 5px 2px;
+        border-radius: 6px;
+    }
+    .StripeElement {
+        box-sizing: border-box;
+
+        height: 40px;
+
+        padding: 10px 12px;
+
+        border: 1px solid transparent;
+        border-radius: 4px;
+        background-color: white;
+
+        box-shadow: 0 1px 3px 0 #e6ebf1;
+        -webkit-transition: box-shadow 150ms ease;
+        transition: box-shadow 150ms ease;
+      }
+
+      .StripeElement--focus {
+        box-shadow: 0 1px 3px 0 #cfd7df;
+      }
+
+      .StripeElement--invalid {
+        border-color: #fa755a;
+      }
+
+      .StripeElement--webkit-autofill {
+        background-color: #fefde5 !important;
+      }
+	  
+	  button#remove-button-saved, button#card-button-saved {
+    float: none !important;
+    margin-top: 15px !important;
+	margin-bottom:15px;
+}
+div#payment-existing {
+    width: 100%;
+    margin: auto;
+}
+div#butn_sav {
+    text-align: right;
+}
+.col-sm-6.remove-buttons, div#butn_sav {
+    padding: 0px;
+}
+div#saved-payment-content-area, .col-sm-12.payment-content-area {
+    padding: 0px 15px;
+	border: 0px;
+    border-radius: 0px;
+}
+button#card-button {
+    margin-top: 0px !important;
+}
+div#saved-payment-content-area {
+    border-bottom: 1px solid #fff;
+    border-radius: 0px;
+}
+div#payment_cancel_button a.btn {
+    margin-top: 15px !important;
+}
+div#payment input[type='text'] {
+    width: 100%;
+}
+div#payment_method_section {
+    padding: 20px 15px;
+}

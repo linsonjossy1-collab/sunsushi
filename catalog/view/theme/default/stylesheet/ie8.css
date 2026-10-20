@@ -1,0 +1,65 @@
+#catpage #column-left {
+	display: block;
+	float: left;
+	height: 100%;
+	padding: 0;
+}
+#column-left {
+	max-width: 150px;
+}
+#catpage #column-right {
+	display: block !important;
+	min-width: 294px;
+	width: 19.4%;
+}
+#column-right {
+	float: right !important;
+	z-index: 10;
+}
+#side_cart_open {
+	float: right !important;
+}
+#catpage #contentcat {
+	width: 53.4% !important;
+}
+body.Contact.Us form label.on-ie-contact {
+	display: block !important;
+}
+body.Contact.Us label.on-ie8-contact#enter-code {
+	width: 100%;
+}
+body.Account.Login #column-right #side_cart_open {
+	min-width: 100%;
+}
+#column-right .box-heading {
+	background-color: #FFF !important;
+}
+#side_cart_open #cart .content {
+	background-color: #252525;
+	color: #fff;
+}
+#column-right .checkout a, .etm-popup-prodts .cart .bundled_cart, .etm-popup-prodts .cart .button_cart, #return-customer-btn, body.Menu .ui-dialog .cart a#button-cart-woc, #confirmfinalbuttom #button-order-confirm, input.button, .ui-dialog .ui-dialog-buttonpane .ui-dialog-buttonset button, body.Checkout #content.onepageetm .login-details-div a#register-customer-btn {
+	max-width: 170px;
+	min-width: 200px;
+	min-height: 20px !important;
+}
+.checkout-content .buttons .right {
+	width: 100%;
+}
+body.home_page_tel #order-online-collection-bg > #svg-rotate-txt {
+	display:none;
+}
+#for-ie8-svg-txt {
+	display:block !important;
+	font-size:23px;
+	font-family: "addis_ababaregular";
+	color:#FFF;
+	position:relative;
+	top:70px;
+	left:30px;
+}
+
+#postcode-search #postcodeheader{
+	color:#FFF !important;
+	font-size:19px !important;
+	}

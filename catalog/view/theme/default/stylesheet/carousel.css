@@ -1,0 +1,217 @@
+
+/*carousel*/
+.jcarousel-wrapper {
+    margin: 20px auto;
+    position: relative;
+}
+
+/** Carousel **/
+
+.jcarousel {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+}
+
+.jcarousel ul {
+    width: 10000em;
+    position: relative;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.jcarousel li {
+    width: 200px;
+    float: left;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+.jcarousel img {
+    display: block;
+    max-width: 100%;
+    height: auto !important;
+}
+
+/** Carousel Controls **/
+.jcarousel-control-prev
+{
+	background:url(images/prev.png) no-repeat center;
+	background-size:100% auto;
+}
+.jcarousel-control-next {
+	background:url(images/next.png) no-repeat center;
+	background-size:100% auto;	
+}
+.jcarousel-control-prev,
+.jcarousel-control-next {
+    font-size: 0px;
+    position: absolute;
+    top: 63%;
+    width: 19px;
+    height: 28px;
+    z-index: 11;
+}
+
+.jcarousel-control-prev {
+    left:10%;
+}
+
+.jcarousel-control-next {
+    right:10%;
+}
+
+
+/*featured controls*/
+.jcarousel-control-prev1
+{
+	background:url(images/prev.png) no-repeat center;
+	background-size:100% auto;
+}
+.jcarousel-control-next1 {
+	background:url(images/next.png) no-repeat center;
+	background-size:100% auto;	
+}
+.jcarousel-control-prev1,
+.jcarousel-control-next1 {
+    font-size: 0px;
+    position: absolute;
+    top: 63%;
+    width: 19px;
+    height: 28px;
+    z-index: 11;
+}
+
+.jcarousel-control-prev1 {
+    left:10%;
+}
+
+.jcarousel-control-next1 {
+    right:10%;
+}
+/** Carousel Pagination **/
+
+.jcarousel-pagination {
+    position: absolute;
+    bottom: -40px;
+    left: 50%;
+    -webkit-transform: translate(-50%, 0);
+    -ms-transform: translate(-50%, 0);
+    transform: translate(-50%, 0);
+    margin: 0;
+}
+
+.jcarousel-pagination a {
+    text-decoration: none;
+    display: inline-block;
+
+    font-size: 11px;
+    height: 10px;
+    width: 10px;
+    line-height: 10px;
+
+    background: #fff;
+    color: #4E443C;
+    border-radius: 10px;
+    text-indent: -9999px;
+
+    margin-right: 7px;
+
+
+    -webkit-box-shadow: 0 0 2px #4E443C;
+    -moz-box-shadow: 0 0 2px #4E443C;
+    box-shadow: 0 0 2px #4E443C;
+}
+
+.jcarousel-pagination a.active {
+    background: #4E443C;
+    color: #fff;
+    opacity: 1;
+
+    -webkit-box-shadow: 0 0 2px #F0EFE7;
+    -moz-box-shadow: 0 0 2px #F0EFE7;
+    box-shadow: 0 0 2px #F0EFE7;
+}
+/*carousel end*/
+
+/*.jcarousel-skin-opencart .jcarousel-container {
+	background: #FFF;
+	margin-bottom: 20px;
+}
+.jcarousel-skin-opencart .jcarousel-direction-rtl {
+	direction: rtl;
+}
+.jcarousel-skin-opencart .jcarousel-container-horizontal {
+	padding: 0px 40px;
+}
+.jcarousel-skin-opencart .jcarousel-clip {
+	overflow: hidden;
+	width: 100%;
+}
+.jcarousel-skin-opencart .jcarousel-clip-horizontal {
+}
+.jcarousel-skin-opencart .jcarousel-item {
+	text-align: center;
+}
+.jcarousel-skin-opencart .jcarousel-item-horizontal {
+	margin-left: 0;
+	margin-right: 10px;
+}
+.jcarousel-skin-opencart .jcarousel-direction-rtl .jcarousel-item-horizontal {
+	margin-left: 10px;
+	margin-right: 0;
+}
+.jcarousel-skin-opencart .jcarousel-item-placeholder {
+	background: #fff;
+	color: #000;
+}
+/**
+ *  Horizontal Buttons
+ */
+.jcarousel-skin-opencart .jcarousel-next-horizontal {
+	position: absolute;
+	top: 23px;
+	right: 5px;
+	width: 32px;
+	height: 32px;
+	cursor: pointer;
+	background: url('../image/button-next.png') center no-repeat;
+}
+.jcarousel-skin-opencart .jcarousel-direction-rtl .jcarousel-next-horizontal {
+	left: 5px;
+	right: auto;
+	background: url('../image/button-previous.png') center no-repeat;
+}
+.jcarousel-skin-opencart .jcarousel-next-horizontal:hover, .jcarousel-skin-opencart .jcarousel-next-horizontal:focus {
+}
+.jcarousel-skin-opencart .jcarousel-next-horizontal:active {
+}
+.jcarousel-skin-opencart .jcarousel-next-disabled-horizontal, .jcarousel-skin-opencart .jcarousel-next-disabled-horizontal:hover, .jcarousel-skin-opencart .jcarousel-next-disabled-horizontal:focus, .jcarousel-skin-opencart .jcarousel-next-disabled-horizontal:active {
+	cursor: default;
+	background: none;
+}
+.jcarousel-skin-opencart .jcarousel-prev-horizontal {
+	position: absolute;
+	top: 23px;
+	left: 0px;
+	width: 32px;
+	height: 32px;
+	cursor: pointer;
+	background: url('../image/button-previous.png') center no-repeat;
+}
+.jcarousel-skin-opencart .jcarousel-direction-rtl .jcarousel-prev-horizontal {
+	left: auto;
+	right: 0px;
+	background: url('../image/button-next.png') center no-repeat;
+}
+.jcarousel-skin-opencart .jcarousel-prev-horizontal:hover, .jcarousel-skin-opencart .jcarousel-prev-horizontal:focus {
+}
+.jcarousel-skin-opencart .jcarousel-prev-horizontal:active {
+}
+.jcarousel-skin-opencart .jcarousel-prev-disabled-horizontal, .jcarousel-skin-opencart .jcarousel-prev-disabled-horizontal:hover, .jcarousel-skin-opencart .jcarousel-prev-disabled-horizontal:focus, .jcarousel-skin-opencart .jcarousel-prev-disabled-horizontal:active {
+	cursor: default;
+	background: none;
+}
+*/

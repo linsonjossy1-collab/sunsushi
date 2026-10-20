@@ -1,0 +1,133 @@
+<?php if(!empty($smart_deals )){ ?>
+<?php //print_r($smart_deals); ?>
+<style type="text/css">
+.ui-dialog .ui-dialog-content {
+    color: #000000 !important;;
+   
+}
+</style>
+<script type="text/javascript">
+    $(function(){
+       //$('.right-cart-smart-deals').dialog();
+    });
+</script>    
+<div class="smart-deal-parent-div">
+    <div class="right-cart-smart-deals" title="">
+    <table>
+        <tr>
+            
+            <td> In Cart</td>
+            <td> = </td>
+            <td> In Deal</td>
+        </tr>
+        <?php foreach($smart_deals as $main_product_id=>$smart_deal){ ?>
+              <?php $total_cart_price=0;?>
+           <?php foreach($smart_deal['available'] as  $available_cart_product) {          ?>
+                      <?php //$total_cart_price +=$available_cart_product['total_price']?>
+                      <tr>
+                      <td><strong class="pr_name"><?php echo $available_cart_product['name']; ?></strong><br/>
+                     <?php if(isset($available_cart_product['options'])){ ?>     
+                      <?php foreach ($available_cart_product['options'] as $option) { ?>
+                              <?php if(!empty($option['option_value'])) { ?>
+                              <?php foreach ($option['option_value'] as $option_value) { ?>
+                                 <small>  <?php  echo $option['name'].":".$option_value['name']; ?></small><br />
+                              
+                              <?php } ?> 
+                              <?php } ?> 
+                      <?php } ?>
+                      <?php } ?>
+                      </td>
+                      <td>=</td>
+                      <td><strong class="pr_name"><?php echo $available_cart_product['name']; ?></strong><br/>
+                      <?php if(isset($available_cart_product['options'])){ ?>         
+                      <?php foreach ($available_cart_product['options'] as $option) { ?>
+                              <?php if(!empty($option['option_value'])) { ?>
+                              <?php foreach ($option['option_value'] as $option_value) { ?>
+                                 <small>  <?php  echo $option['name'].":".$option_value['name']; ?></small><br />
+                              
+                              <?php } ?> 
+                              <?php } ?> 
+                      <?php } ?>
+                      <?php } ?>
+                      </td>
+                      </tr>
+           <?php } ?>
+             <?php if(!empty($smart_deal['suggestion'])){ ?>
+             <tr>
+               <td> Not in cart </td>
+               <td>  </td>
+               <td>
+                <?php $suggestion_count=count($smart_deal['suggestion']); ?>   
+                
+                <?php foreach($smart_deal['suggestion'] as  $suggested_cart_product) {          ?>
+                <?php if($suggestion_count==1){ ?>
+                <div id="suggested-deal-prodt-<?php echo $suggested_cart_product['product_id'];?>">
+                <small><?php echo $suggested_cart_product['name'];?></small> <br />  
+                 Deal Available ,Use Deal <span><a class="button" onclick="dealapprove(<?php echo $main_product_id;?>,<?php echo $suggested_cart_product['product_id'];?>,'suggested-deal-prodt-<?php echo $suggested_cart_product['product_id'];?>')">ADD</a> </span>
+                 
+                <input type="hidden" name="product_id" value="<?php echo $suggested_cart_product['product_id'];?>">
+                 <?php
+                     if(!empty($suggested_cart_product['options'])){
+                         foreach($suggested_cart_product['options'] as $suggested_option){
+                           if($suggested_option['required']==1){
+                              if($suggested_option['type']=='checkbox'){
+                                 foreach($suggested_option['option_value']  as $suggested_optionvalue){
+                                    if(!(float)($suggested_optionvalue['price'])){ 
+                                      ?>
+                                      --<small>  <?php  echo $suggested_option['name'].":".$suggested_optionvalue['name']; ?></small><br />
+                                      <input type="hidden" name="option[<?php echo $suggested_option['product_option_id']; ?>][]" value="<?php echo $suggested_optionvalue['product_option_value_id']; ?>">
+                                      <?php
+                                    }
+                                  }   
+                              }else{
+                                  foreach($suggested_option['option_value']  as $suggested_optionvalue){
+                                    if(! (float)($suggested_optionvalue['price'])){ 
+                                    ?>
+                                    --<small>  <?php  echo $suggested_option['name'].":".$suggested_optionvalue['name']; ?></small><br />
+                                    <input type="hidden" name="option[<?php echo $suggested_option['product_option_id']; ?>][]" value="<?php echo $suggested_optionvalue['product_option_value_id']; ?>">
+                                    <?php
+                                    }
+                                  } 
+                              }
+                              
+                              
+                           }
+                         }
+                     }
+                    ?>
+                </div>
+                <?php }else{ ?>
+                <div id="smart-suggested-product-<?php echo $suggested_cart_product['product_id'];?>">
+                <input type="hidden" name="product_id" value="<?php echo $suggested_cart_product['product_id'];?>">
+                <small><?php echo $suggested_cart_product['name'];?></small>
+                <?php if(!empty($suggested_cart_product['options'])){ ?>
+                <span><a class="button" onclick="dealoptionpopup(<?php echo $suggested_cart_product['product_id'];?>,<?php echo $main_product_id;?>,<?php echo $smart_deal['suggested_bundle_id']; ?>);">ADD</a> </span>
+                <?php }else{ ?>
+                
+                <span><a class="button" onclick="dealapprove(<?php echo $main_product_id;?>,<?php echo $suggested_cart_product['product_id'];?>,'smart-suggested-product-<?php echo $suggested_cart_product['product_id'];?>')">ADD</a> </span>
+                <?php } ?>
+                <div style="display:none" title="<?php echo $suggested_cart_product['name'];?>" id="smart-suggested-product-options-<?php echo $suggested_cart_product['product_id'];?>"></div>
+                </div>
+                <br />
+                   
+                 <?php } ?>  
+                <?php } ?>
+               </td>
+             </tr>
+             <?php } ?>
+             <tr>
+                 <td><?php echo $this->currency->format($this->tax->calculate($smart_deal['total_cart_price'], $deals[$main_product_id]['tax_class_id'], $this->config->get('config_tax')));?></td>
+                 <td></td>
+                 <td> <?php echo $this->currency->format($this->tax->calculate($deals[$main_product_id]['price'], $deals[$main_product_id]['tax_class_id'], $this->config->get('config_tax'))); ?></td>
+             </tr>
+             
+             <?php if(empty($smart_deal['suggestion'])){ ?>
+             <tr><td colspan="3">You can Save <?php echo $this->currency->format($this->tax->calculate($smart_deal['total_cart_price']-$deals[$main_product_id]['price'], $deals[$main_product_id]['tax_class_id'], $this->config->get('config_tax'))); ?> ,Use <?php echo $deals[$main_product_id]['name']; ?> <a onclick="dealapprove(<?php echo $main_product_id; ?>);" id="deal_add_yes" class="button">YES</a>  <a onclick="dealdiscardclick(<?php echo $main_product_id; ?>,<?php echo $smart_deal['suggested_bundle_id']; ?>);" id="deal_add_no" class="button">NO</a></td></tr>
+             <?php } ?>
+        <?php } ?>
+        
+    </table>
+
+</div>
+</div>
+<?php } ?>

@@ -1,0 +1,952 @@
+<?php
+
+class ControllerCheckoutShippingMethodetm extends Controller {
+
+    public function index() {
+        $this->language->load('checkout/checkout');
+
+        $this->load->model('account/address');
+
+        if(isset($this->request->post['shipping_method'])) {   
+            $delivery_method = $this->request->post['shipping_method'];  
+        } else if (isset($this->session->data['delivery_method'])) {
+            $delivery_method = $this->session->data['delivery_method'];
+        } else {
+            $delivery_method = '';
+        }
+        $this->data['delivery_method'] = $delivery_method;
+ 
+
+        if(isset($this->request->get['comment'])){
+            $this->session->data['comment'] = strip_tags($this->request->get['comment']); 
+        }
+        if ($this->customer->isLogged() && isset($this->session->data['shipping_address_id'])) {
+           
+            $shipping_address = $this->model_account_address->getAddress($this->session->data['shipping_address_id']);
+        } elseif (isset($this->session->data['guest'])) {
+            // echo "bbbb";
+            $shipping_address = $this->session->data['guest']['shipping'];
+            if(!isset($shipping_address['postcode']) || $shipping_address['postcode']==''){
+                $shipping_address['postcode'] = (isset($this->session->data['postcode'])?$this->session->data['postcode']:'');
+            }
+        }
+         $this->data['error_warning'] = '';
+        if (empty($shipping_address)) {
+            $shipping_address = array('firstname' => '',
+                'lastname' => '',
+                'company' => '',
+                'company_id' => '',
+                'tax_id' => '',
+                'address_1' => '',
+                'address_2' => '',
+                'postcode' => (isset($this->session->data['postcode'])?$this->session->data['postcode']:''),
+                'city' => '',
+                'zone_id' => $this->config->get('config_zone_id'),
+                'zone' => '',
+                'zone_code' => '',
+                'country_id' => $this->config->get('config_country_id'),
+                'country' => '',
+                'iso_code_2' => '',
+                'iso_code_3' => '',
+                'address_format' => '');
+        }
+        //print_r($shipping_address);
+        $totals = $this->cart->getTotal();
+        $this->load->model('catalog/product');
+
+        /*
+        if($this->cart->hasProducts()){
+            foreach ($this->cart->getProducts() as $product) {
+                //get minimum cart amount for the product
+                $prod_mincart = $this->model_catalog_product->getProductMinimumCart($product['product_id']);
+                if($prod_mincart){
+                    $prod_min_cart[$product['product_id']] = unserialize($prod_mincart);
+                }
+            }
+        }
+        */
+        $this->data['code']='';
+        $this->load->model('catalog/category');
+
+        if (!empty($shipping_address)) {
+            // Shipping Methods
+
+            $quote_data = array();
+
+            $this->load->model('setting/extension');
+
+            $results = $this->model_setting_extension->getExtensions('shipping');
+
+            foreach ($results as $result) {
+                if($delivery_method == $result['code'].'.'.$result['code'])
+				{
+                if ($this->config->get($result['code'] . '_status')) {
+                     $this->load->model('shipping/' . $result['code']);
+                    $dine_status = (isset($this->session->data['tableordering']) && isset($this->session->data['dine_table_id']) && $result['code']=='dine')?true:false;
+                    if((!$dine_status && method_exists($this->{'model_shipping_' . $result['code']}, 'isposonly') ) || $this->postcode->checkisDisabledfromEpos($result['code']))
+                        continue;
+                    $this->load->model('shipping/' . $result['code']);
+                   //product availability for shipping
+                    $categories = $this->postcode->getcategories();
+                    $this->load->language('shipping/'. $result['code']);
+                    $status_chk =FALSE;
+                    //$this->load->model('catalog/product');
+                    //$this->load->model('catalog/category');
+                     if($this->cart->hasProducts()){
+                         // $message='No '.$this->language->get('text_title').' to ';
+                         $message=$this->language->get('text_title');
+                         $no_delivery = '';
+                         $checked_min_category = array();
+                         $checked_delivery_category = array();
+
+                         foreach ($this->cart->getProducts() as $product) {
+                            //Check Category Shippings
+                             
+                            if (!empty($product['shipping_methodes']) and !in_array($result['code'], $product['shipping_methodes'])) {//
+                                $status_chk = true;
+                                //$message .=$product['name'] . ',';
+                                $no_delivery['no'].=$product['name'] . ', ';
+                                $prod_error = true; 
+                            } else {
+                                $prod_error = false;
+                            }
+
+                            if(!$status_chk){//check category
+                                $product_categories = $this->model_catalog_product->getProductCategories($product['product_id']);
+                                $category_id = 0;
+                                foreach ($product_categories as $prd_category_id) {
+                                     if(in_array($prd_category_id, $categories)){
+                                        $category_id =$prd_category_id;
+                                         break;
+                                    }
+                                }
+                                $cat_data = $this->model_catalog_category->getCategory($category_id); 
+                                $cat_shipp_data = unserialize($cat_data['shipping_methodes']);
+                                $cat_shipping = !empty($cat_shipp_data)?$cat_shipp_data:array();
+                                if (!empty($cat_shipping) and !in_array($result['code'], $cat_shipping)) {//
+                                    $status_chk = true;
+                                    //$message .=$cat_data['name'] . ',';
+                                    $no_delivery['no'].=$cat_data['name'] . ', ';
+                                    $prod_error = true; 
+                                }
+                            }
+
+
+                            if(!$prod_error){
+                                // check minimum cart for product delivery
+                                if(isset($product['minimum_amount'][$result['code']])) {
+                                    if($totals < $product['minimum_amount'][$result['code']]) {
+                                        $status_chk = true;
+                                        $no_delivery['option'][$product['name']]['minimum']  = $product['minimum_amount'][$result['code']];
+                                    }
+                                } else {
+                                    // check minimum cart for category delivery
+                                    $product_categories = $this->model_catalog_product->getProductCategories($product['product_id']);
+                                    foreach ($product_categories as $prd_category_id) {
+                                        if(!in_array($prd_category_id, $checked_min_category)) {
+                                            $min_cart = $this->model_catalog_category->getCategoryMinimumCart($prd_category_id);
+                                            if( isset($min_cart[$result['code']]) && $totals < $min_cart[$result['code']]) {
+                                                $status_chk = true;
+                                                $cat_data = $this->model_catalog_category->getCategory($prd_category_id); 
+                                                $no_delivery['option'][$cat_data['name']]['minimum']  = $min_cart[$result['code']];
+                                                //break;                                               
+                                            }
+
+                                            $checked_min_category[] = $prd_category_id;
+                                        }
+                                    }
+                                }
+
+                                $current_time = strtotime(date('H:i'));
+                                if(!empty($product['shipping_time']) && isset($product['shipping_time'][$result['code']][strtolower(date('l'))])) {
+                                    foreach($product['shipping_time'][$result['code']][strtolower(date('l'))] as $delivery_time) {
+
+                                        $end_time = strtotime($delivery_time['end']);
+
+                                        if($delivery_time['start']) {
+                                            $start_time = strtotime($delivery_time['start']);
+                                            if($current_time >= $start_time) {
+                                                if($delivery_time['end'] &&  $current_time >= $end_time) {
+                                                    $del_btwn = sprintf($this->language->get('error_delivery_between_time'),date('h:i a',$start_time),date('h:i a', $end_time));
+                                                } else {
+                                                    $del_btwn = '';
+                                                    break 2;
+                                                }
+                                            } else {
+                                                //$del_btwn = sprintf($this->language->get('error_delivery_between_time'),$delivery_time['start'],$delivery_time['end']);
+                                                $del_btwn = sprintf($this->language->get('error_delivery_after_time'),date('h:i a', $start_time));
+                                            }
+
+                                        } else if($delivery_time['end'] &&  $current_time >= $end_time) {
+                                            $del_btwn = sprintf($this->language->get('error_delivery_till_time'),date('h:i a', $end_time));
+                                        }
+                                    }
+                                    if($del_btwn) {
+                                        $status_chk = true;
+                                        $cat_data = $this->model_catalog_category->getCategory($prd_category_id); 
+                                        $no_delivery['option'][$product['name']]['time']  = $del_btwn;
+                                    }
+                                } else {
+                                    
+                                    $del_btwn = '';
+                                    $product_categories = $this->model_catalog_product->getProductCategories($product['product_id']);
+                                    foreach ($product_categories as $prd_category_id) {
+                                        if(!in_array($prd_category_id, $checked_delivery_category)) {
+                                            $del_time = $this->model_catalog_category->getCategoryShippingTime($prd_category_id);
+                                            if(!empty($del_time[$result['code']]) && isset($del_time[$result['code']][strtolower(date('l'))])) {
+                                                foreach($del_time[$result['code']][strtolower(date('l'))] as $delivery_time) {
+
+                                                    $end_time = strtotime($delivery_time['end']);
+    
+                                                    if($delivery_time['start']) {
+                                                        $start_time = strtotime($delivery_time['start']);
+                                                        if($current_time >= $start_time) {
+                                                            if($delivery_time['end'] &&  $current_time >= $end_time) {
+                                                                //$del_btwn = sprintf($this->language->get('error_delivery_between_time'),$delivery_time['start'],$delivery_time['end']);
+                                                                $del_btwn = sprintf($this->language->get('error_delivery_between_time'),date('h:i a',$start_time),date('h:i a', $end_time));
+                                                            } else {
+                                                                $del_btwn = '';
+                                                                break 2;
+                                                            }
+                                                        } else {
+                                                            //$del_btwn = sprintf($this->language->get('error_delivery_between_time'),$delivery_time['start'],$delivery_time['end']);
+                                                            //$del_btwn = sprintf($this->language->get('error_delivery_after_time'),$delivery_time['start']);
+                                                            $del_btwn = sprintf($this->language->get('error_delivery_after_time'),date('h:i a', $start_time));
+                                                        }
+    
+                                                    } else if($delivery_time['end'] &&  $current_time >= $end_time) {
+                                                        //$del_btwn = sprintf($this->language->get('error_delivery_till_time'),$delivery_time['end']);
+                                                        $del_btwn = sprintf($this->language->get('error_delivery_till_time'),date('h:i a', $end_time));
+                                                    }
+                                                }
+                                                if($del_btwn) {
+                                                    $status_chk = true;
+                                                    $cat_data = $this->model_catalog_category->getCategory($prd_category_id); 
+                                                    //$message .= $cat_data['name'].$del_btwn."<br>";
+                                                    $no_delivery['option'][$cat_data['name']]['time']  = $del_btwn;
+                                                }
+                                            }
+                                            $checked_delivery_category[] = $prd_category_id;
+                                        }
+                                        
+                                    }
+                                }
+
+
+
+
+                            }
+
+
+                            /*
+                            if(!$prod_error){
+                                // check minimum cart for product delivery
+                                if(isset($prod_min_cart[$product['product_id']][$result['code']])) {
+                                    if($totals < $prod_min_cart[$product['product_id']][$result['code']]) {
+                                        $status_chk = true;
+                                        //$message .=$product['name'] . '(minimum cart amount should be '.$prod_min_cart[$product['product_id']][$result['code']].'),';
+                                        $no_delivery['option'][$product['name']]['minimum']  = $prod_min_cart[$product['product_id']][$result['code']];
+                                    }
+                                } else {
+                                    // check minimum cart for category delivery
+                                    $product_categories = $this->model_catalog_product->getProductCategories($product['product_id']);
+                                    foreach ($product_categories as $prd_category_id) {
+                                        if(!in_array($prd_category_id, $checked_min_category)) {
+                                            $min_cart = $this->model_catalog_category->getCategoryMinimumCart($prd_category_id);
+                                            if($totals < $min_cart[$result['code']]) {
+                                                $status_chk = true;
+                                                $cat_data = $this->model_catalog_category->getCategory($prd_category_id); 
+                                                //$message .=$cat_data['name'] . '(minimum cart amount should '.$min_cart.'), '; 
+                                                $no_delivery['option'][$cat_data['name']]['minimum']  = $min_cart;
+                                                //break;                                               
+                                            }
+                                            $checked_min_category[] = $prd_category_id;
+                                        }
+                                    }
+                                }
+
+                                $current_time = strtotime(date('H:i'));
+                                $product_del_time = $this->model_catalog_product->getProductShippingTime($product['product_id']);
+                                if(isset($product_del_time[$result['code']][strtolower(date('l'))])) {
+                                    foreach($product_del_time[$result['code']][strtolower(date('l'))] as $delivery_time) {
+
+                                        $end_time = strtotime($delivery_time['end']);
+
+                                        if($delivery_time['start']) {
+                                            $start_time = strtotime($delivery_time['start']);
+                                            if($current_time >= $start_time) {
+                                                if($delivery_time['end'] &&  $current_time >= $end_time) {
+                                                    $del_btwn = sprintf($this->language->get('error_delivery_between_time'),date('h:i a',$start_time),date('h:i a', $end_time));
+                                                } else {
+                                                    $del_btwn = '';
+                                                    break 2;
+                                                }
+                                            } else {
+                                                //$del_btwn = sprintf($this->language->get('error_delivery_between_time'),$delivery_time['start'],$delivery_time['end']);
+                                                $del_btwn = sprintf($this->language->get('error_delivery_after_time'),date('h:i a', $start_time));
+                                            }
+
+                                        } else if($delivery_time['end'] &&  $current_time >= $end_time) {
+                                            $del_btwn = sprintf($this->language->get('error_delivery_till_time'),date('h:i a', $end_time));
+                                        }
+                                    }
+                                    if($del_btwn) {
+                                        $status_chk = true;
+                                        $cat_data = $this->model_catalog_category->getCategory($prd_category_id); 
+                                        $no_delivery['option'][$product['name']]['time']  = $del_btwn;
+                                    }
+                                } else {
+
+                                    $del_btwn = '';
+                                    $product_categories = $this->model_catalog_product->getProductCategories($product['product_id']);
+                                    foreach ($product_categories as $prd_category_id) {
+                                        if(!in_array($prd_category_id, $checked_delivery_category)) {
+                                            $del_time = $this->model_catalog_category->getCategoryShippingTime($prd_category_id);
+
+                                            if(isset($del_time[$result['code']][strtolower(date('l'))])) {
+                                                foreach($del_time[$result['code']][strtolower(date('l'))] as $delivery_time) {
+    
+                                                    $end_time = strtotime($delivery_time['end']);    
+                                                    if($delivery_time['start']) {
+                                                        $start_time = strtotime($delivery_time['start']);
+                                                        if($current_time >= $start_time) {
+                                                            if($delivery_time['end'] &&  $current_time >= $end_time) {
+                                                                $del_btwn = sprintf($this->language->get('error_delivery_between_time'),date('h:i a',$start_time),date('h:i a', $end_time));
+                                                            } else {
+                                                                $del_btwn = '';
+                                                                break 2;
+                                                            }
+                                                        } else {
+                                                            $del_btwn = sprintf($this->language->get('error_delivery_after_time'),date('h:i a', $start_time));
+                                                        }
+    
+                                                    } else if($delivery_time['end'] &&  $current_time >= $end_time) {
+                                                        $del_btwn = sprintf($this->language->get('error_delivery_till_time'),date('h:i a', $end_time));
+                                                    }
+                                                }
+                                                if($del_btwn) {
+                                                    $status_chk = true;
+                                                    $cat_data = $this->model_catalog_category->getCategory($prd_category_id); 
+                                                    $no_delivery['option'][$cat_data['name']]['time']  = $del_btwn;
+                                                }
+                                            }
+                                            $checked_delivery_category[] = $prd_category_id;
+                                        }
+                                        
+                                    }
+                                }
+
+                            }
+                            */
+
+
+                        }
+                        
+                     }
+                    //product availability for shipping
+                     if($status_chk){
+
+                        $message.="<ul>";
+                        if($no_delivery['no']) {
+                            $message.="<li>".$this->language->get('error_not_available').$no_delivery['no']."</li>";
+                        }
+                        if(isset($no_delivery['option'])) {
+                            foreach($no_delivery['option'] as $key=> $value) {
+                                $message.= "<li>".$key;
+                                if(isset($value['minimum'])) {
+                                    $message.=sprintf($this->language->get('error_minimum_cart'), $value['minimum']);
+                                }
+                                if(isset($value['time'])) {
+                                    $message.=$value['time'];
+                                }
+                                $message.="</li>";
+                            }  
+                        }
+                        $message.="</ul>";
+                        unset($no_delivery);
+                         if($this->data['code']==''){
+                            $this->data['code'] = $result['code'];
+                        }
+                        $quote_data[$result['code']] = array(
+                            'title' => '',
+                            'quote' => '',
+                            'sort_order' =>'',
+                            'error' => false,
+                            'msg' => $message
+                        );
+                       
+                        $this->data['error_warning'] = $message;
+                     }else{  
+                    $quote = $this->{'model_shipping_' . $result['code']}->getQuote($shipping_address);
+
+                    if ($quote) {
+                       // print_r($quote);
+                        if (isset($this->session->data['coupon_shipping_cost'])) {
+                            //  print_r($quote);
+                            $quote['quote'][$result['code']]['cost'] += $this->session->data['coupon_shipping_cost'];
+                            $quote['quote'][$result['code']]['text'] = $this->currency->format($quote['quote'][$result['code']]['cost']);
+                        }
+                        if($this->data['code']==''){
+                            $this->data['code'] = $result['code'];
+                        }
+                        $quote_data[$result['code']] = array(
+                            'title' => $quote['title'],
+                            'quote' => $quote['quote'],
+                            'sort_order' => $quote['sort_order'],
+                            'error' => $quote['error'],
+                            'msg' => (isset($quote['delivery_msg_status'])) ? $quote['delivery_msg_status'] : ''
+                        );
+                    }
+                     }
+                }
+            }
+        }
+
+            $sort_order = array();
+            unset($checked_min_category);
+            unset($checked_delivery_category);
+
+            foreach ($quote_data as $key => $value) {
+                $sort_order[$key] = $value['sort_order'];
+            }
+
+            array_multisort($sort_order, SORT_ASC, $quote_data);
+
+            $this->session->data['shipping_methods'] = $quote_data;
+        }
+        
+
+        $this->data['text_shipping_method'] = $this->language->get('text_shipping_method');
+        $this->data['text_comments'] = $this->language->get('text_comments');
+
+        $this->data['button_continue'] = $this->language->get('button_continue');
+        $this->data['text_change_delivery'] = $this->language->get('text_change_delivery');
+        if (empty($this->session->data['shipping_methods'])) {
+            $this->data['error_warning'] = sprintf($this->language->get('error_no_shipping'), $this->url->link('information/contact'));
+        } 
+        //echo $this->data['error_warning'];
+        if (isset($this->session->data['shipping_methods'])) {
+            $this->data['shipping_methods'] = $this->session->data['shipping_methods'];
+        } else {
+            $this->data['shipping_methods'] = array();
+        }
+
+         
+        if ($delivery_method) {
+            foreach ($this->data['shipping_methods'] as $defaultmethod) {
+                if (isset($defaultmethod['quote']) && is_array($defaultmethod['quote'])) {
+                    $current_method = current($defaultmethod['quote']);
+                    if($delivery_method == $current_method['code']) {
+                        $this->session->data['shipping_method'] = $current_method;
+                        break;
+                    }
+                }
+            }
+        } else {
+            $this->data['error_warning'] = $this->language->get('error_select_shipping');
+        }	
+        $this->data['logged'] = $this->customer->isLogged();
+        if(isset($this->session->data['postcode'])) {
+            $this->data['postcode'] = $this->session->data['postcode'];
+        }
+        else {
+            $this->data['postcode'] = '';
+        }
+        
+
+        if (isset($this->session->data['shipping_method']['code'])) {
+            //$this->data['code'] = $this->session->data['shipping_method']['code'];
+            $shipping = explode('.', $this->session->data['shipping_method']['code']);
+            $this->data['code'] = $shipping[0];
+        }
+
+        if (isset($this->session->data['comment'])) {
+            $this->data['comment'] = $this->session->data['comment'];
+        } else {
+            $this->data['comment'] = '';
+        }
+
+        
+        if ($delivery_method == 'home.home') {
+            $this->data['text_requested_time'] = $this->language->get('text_requested_time');
+        }
+        else {
+            $this->data['text_requested_time'] = $this->language->get('text_collection_time');
+        }
+         $this->log->write(print_r(array($this->data['shipping_methods']),true));
+        // $this->data['requested_times'] = $this->getChild('checkout/shipping_methodetm/requestedtime');
+        if (isset($this->session->data['order_requested_time'])) {
+            $this->data['order_requested_time'] = $this->session->data['order_requested_time'];
+            if($this->session->data['order_requested_time'] > strtotime('now')) {
+                $this->data['requested_time'] =  date(" h:i A (l) - (d/m/y)",$this->session->data['order_requested_time']);
+            } else {
+                $this->data['requested_time'] = $this->language->get('text_asap_time');
+        }
+        } else { 
+            $this->data['order_requested_time'] =  '';
+            $this->data['requested_time'] = $this->language->get('text_asap_time');
+        }
+        $this->data['checkout'] = $this->url->link('checkout/checkoutetm', '', 'SSL');
+
+        if(isset($this->session->data['product_no_times'])){
+            $this->data['error_warning'] = $this->language->get('error_avaliable_times');
+            unset($this->session->data['shipping_method']);
+            unset($this->session->data['shipping_methods']);
+            $this->data['shipping_methods'] = array();
+             
+        }
+        if(isset($this->session->data['tableordering']) && isset($this->session->data['dine_table_id'])){
+            $this->data['dine_order']=1;
+        }
+        if (file_exists(DIR_TEMPLATE . $this->config->get('config_template') . '/template/checkout/shipping_methodetm.tpl')) {
+            $this->template = $this->config->get('config_template') . '/template/checkout/shipping_methodetm.tpl';
+        } else {
+            $this->template = 'default/template/checkout/shipping_methodetm.tpl';
+        }
+
+        $this->response->setOutput($this->render());
+    }
+
+    public function validate() {
+        $this->language->load('checkout/checkout');
+        $this->log->write(print_r(array("SHIPPING METHODE VALIDATE"),true));
+        $this->log->write(print_r(array($this->session->data),true));
+        $this->log->write(print_r(array($this->request->post),true));
+        $this->log->write(print_r(array($this->request->get),true));
+        $json = array();
+
+        // Validate if shipping is required. If not the customer should not have reached this page.
+        if (!$this->cart->hasShipping() && (isset($this->session->data['vouchers']) && empty($this->session->data['vouchers']))) {
+            $json['redirect'] = $this->url->link('checkout/checkoutetm', '', 'SSL');
+        }
+
+        // Validate if shipping address has been set.		
+        $this->load->model('account/address');
+
+        if ($this->customer->isLogged() && isset($this->session->data['shipping_address_id'])) {
+            $shipping_address = $this->model_account_address->getAddress($this->session->data['shipping_address_id']);
+        } elseif (isset($this->session->data['guest'])) {
+            $shipping_address = $this->session->data['guest']['shipping'];
+        }
+
+        if (empty($shipping_address) && isset($_SESSION['postcode'])) {
+            $shipping_address = array('firstname' => '',
+                'lastname' => '',
+                'company' => '',
+                'company_id' => '',
+                'tax_id' => '',
+                'address_1' => '',
+                'address_2' => '',
+                'postcode' => $_SESSION['postcode'],
+                'city' => '',
+                'zone_id' => $this->config->get('config_zone_id'),
+                'zone' => '',
+                'zone_code' => '',
+                'country_id' => $this->config->get('config_country_id'),
+                'country' => '',
+                'iso_code_2' => '',
+                'iso_code_3' => '',
+                'address_format' => '');
+        }
+
+        if (empty($shipping_address)) {
+            $json['redirect'] = $this->url->link('checkout/checkout', '', 'SSL');
+        }
+
+        // Validate cart has products and has stock.	
+        if ((!$this->cart->hasProducts() && empty($this->session->data['vouchers'])) || (!$this->cart->hasStock() && !$this->config->get('config_stock_checkout'))) {
+            $json['redirect'] = $this->url->link('checkout/cart');
+        }
+
+        // Validate minimum quantity requirments.			
+        $products = $this->cart->getProducts();
+
+        foreach ($products as $product) {
+            $product_total = 0;
+
+            foreach ($products as $product_2) {
+                if ($product_2['product_id'] == $product['product_id']) {
+                    $product_total += $product_2['quantity'];
+                }
+            }
+
+            if ($product['minimum'] > $product_total) {
+                $json['redirect'] = $this->url->link('checkout/cart');
+
+                break;
+            }
+        }
+
+        if (!$json) {
+             if($this->cart->hasProducts()) {
+            if (!isset($this->request->post['shipping_method'])) {
+                $json['error']['warning'] = $this->language->get('error_shipping');
+                //$json['error']['warning'] = $this->language->get('error_home_shipping');
+            } else {
+                $shipping = explode('.', $this->request->post['shipping_method']);
+
+                if (!isset($shipping[0]) || !isset($shipping[1]) || !isset($this->session->data['shipping_methods'][$shipping[0]]['quote'][$shipping[1]])) {
+                    // $json['error']['warning'] = $this->language->get('error_shipping');
+                    $json['error']['warning'] = $this->language->get('error_home_shipping');
+                }
+            }
+            }
+            if (!$json and !$this->config->get('config_preordering_status')) {
+                //check store holiday
+                if($this->postcode->isStoreHoliday()) {
+                    $json['error']['warning'] = $this->language->get('text_holidaymsg_head');
+                    if($this->config->get('config_online_orders')){
+                        $json['error']['warning'] = $this->language->get('text_onlinemsg_head');
+                    }
+                } else if($this->config->get('config_holiday_online_orders')) {
+                    if($this->postcode->isStoreHoliday()) {
+                        $json['error']['warning'] = $this->language->get('text_holidaymsg_head');
+                    }
+                }
+            }
+            if (!$json && $this->request->post['shipping_method']!='dine.dine') {
+                    //requested time check
+                    $current_time = strtotime('now');
+    
+                if ($this->request->post['shipping_method'] == 'home.home') {
+                        $store_delivery_time = $this->config->get('home_delivery_storetime');
+                    $shippingmethod = 'Delivery';
+                } else {
+                        $store_delivery_time = $this->config->get('collect_in_storetime');
+                    $shippingmethod = 'Collection';
+                }
+                    $store_delivery_time = intval($store_delivery_time);
+                    //  $this->load->model('checkout/postcodes');
+                    $requested_times = $this->postcode->getnewrequestedtimes($store_delivery_time,$current_time,0,$this->request->post['shipping_method']);
+                    if(empty($requested_times)){
+                        // $json['error']['warning'] ='Store is closed Today';
+                        $json['error']['warning'] =$this->language->get('error_requested_time');
+                    } else {
+                        if(!isset($this->session->data['order_requested_time'])) {
+                            if(isset($requested_times['times'])) {
+                                foreach($requested_times['times'] as $key => $req) {
+                                    $this->session->data['order_requested_time'] = $key;
+                                    break; 
+                    }
+                            } else {
+                                foreach($requested_times as $key => $req) {
+                                    $this->session->data['order_requested_time'] = $key;
+                                    break; 
+                }
+                            }
+                        } else {
+
+                }
+            }
+                }
+            }
+
+            if (!$json) {
+                $shipping = explode('.', $this->request->post['shipping_method']);
+
+                $this->session->data['shipping_method'] = $this->session->data['shipping_methods'][$shipping[0]]['quote'][$shipping[1]];
+                if(isset($this->request->post['comment'])) {
+                    $this->session->data['comment'] = strip_tags($this->request->post['comment']);
+                }
+                
+            }
+
+
+        $this->response->setOutput(json_encode($json));
+    }
+
+     public function requestedtime() {
+        // Set requested time
+        if (isset($this->request->post['order_requested_time'])) {
+            $this->session->data['order_requested_time'] = $this->request->post['order_requested_time'];
+            $json = array();
+            // $this->response->setOutput(json_encode($json));
+        }
+        $shipping_method = '';
+        if (!isset($this->request->post['shipping_method'])) {
+            if (isset($this->session->data['shipping_method'])) {
+                $shipping_method = $this->session->data['shipping_method']['code'];
+            }
+            elseif(isset($this->session->data['delivery_method'])){
+                $shipping_method = $this->session->data['delivery_method'];
+            }
+        } else {
+            $shipping_method = $this->request->post['shipping_method'];
+        }
+        $this->language->load('checkout/checkout');
+        $first_time = '';
+        $request_time = '';
+        $requested_times = array();
+        if ($shipping_method) {
+            //order_requested_time
+            $preparation_time = 0;
+            $this->load->model('catalog/product');
+            if (($this->cart->hasProducts())) {
+                foreach ($this->cart->getProducts() as $product) {
+                    $prodts = $this->model_catalog_product->getProduct($product['product_id']);
+                    if ($preparation_time < (int) $prodts['preparation_time']) {
+                        $preparation_time = (int) $prodts['preparation_time'];
+                    }
+                }
+            }
+            $current_time = time();
+
+            //if ($shipping_method == 'home.home')
+               // $store_delivery_time = $this->config->get('config_home_storetime');
+            //else
+               // $store_delivery_time = $this->config->get('config_collect_storetime');
+            if ($shipping_method == 'home.home')
+                $store_delivery_time = $this->config->get('home_delivery_storetime');
+            else
+                $store_delivery_time = $this->config->get('collect_in_storetime');
+            $store_delivery_time = intval($store_delivery_time);
+            $requested_times = $this->postcode->getnewrequestedtimes($store_delivery_time,$current_time,$preparation_time,$shipping_method);
+           
+        }
+
+        if ($shipping_method == 'home.home') {
+            $this->data['text_requested_time'] = $this->language->get('text_home_time');
+        }
+        elseif ($shipping_method == 'collect.collect') {
+            $this->data['text_requested_time'] = $this->language->get('text_collection_time');
+        }
+        else {
+            $this->data['text_requested_time'] = $this->language->get('text_requested_time');
+        }
+        $this->data['all_requested_times'] = $requested_times; 
+        $this->data['requested_times'] = array();
+        if(isset($this->session->data['order_requested_day'])){
+            $this->data['order_requested_day']=$this->session->data['order_requested_day'];
+             $this->data['requested_times'] = array();
+             
+             foreach ($requested_times['days'] as $ky=>$daytime){
+                if($this->session->data['order_requested_day']==$daytime['timestamp']){                    
+                    $this->data['requested_times'] = $requested_times['times'][$ky];
+                    break;
+                }
+             }
+        }else if(!empty ($requested_times) && !empty($requested_times['days']) && isset ($requested_times['days'][0])){
+            $this->data['order_requested_day'] = $requested_times['days'][0]['timestamp'];
+            $this->data['requested_times'] = $requested_times['times'][0];
+        }else{
+            $this->data['order_requested_day']='';
+             $this->data['requested_times'] = array(); 
+             
+        }
+        //unset($this->session->data['order_requested_time']);
+        //unset($this->session->data['order_requested_day']);
+        foreach($this->data['requested_times'] as $key => $requested_time){
+            if($first_time==''){
+                $first_time = $key;
+            }
+            if(isset($this->session->data['order_requested_time']) && $key == $this->session->data['order_requested_time'] ){
+                $request_time = $this->session->data['order_requested_time'];
+            }
+        }
+        if ($request_time) {
+            $this->data['order_requested_time'] = $request_time;
+        } else {
+            if ($first_time){
+                $this->session->data['order_requested_time'] = $first_time;
+                $this->data['order_requested_time'] = $first_time;
+            }
+        }
+       
+        $this->data['shipping_method']=$shipping_method;
+        if (file_exists(DIR_TEMPLATE . $this->config->get('config_template') . '/template/checkout/shipping_requested_time.tpl')) {
+            $this->template = $this->config->get('config_template') . '/template/checkout/shipping_requested_time.tpl';
+        } else {
+            $this->template = 'default/template/checkout/shipping_requested_time.tpl';
+        }
+
+        $this->response->setOutput($this->render());
+    }
+    public function setrequestedtime() {
+        // Set requested time
+        if (isset($this->request->post['order_requested_day'])) {
+            $this->session->data['order_requested_day'] = $this->request->post['order_requested_day'];            
+        }
+        if (isset($this->request->post['order_requested_time'])) {
+            $this->session->data['order_requested_time'] = $this->request->post['order_requested_time'];
+            $this->session->data['order_requested_day'] = date('d-m-y',$this->request->post['order_requested_time']);
+            //$this->log->write($this->session->data['order_requested_day']);
+            $json = array();
+            $this->response->setOutput(json_encode($json));
+        }
+    }
+
+    public function setrequestedday(){
+        if (isset($this->request->post['order_requested_day'])) {
+            $this->session->data['order_requested_day'] = $this->request->post['order_requested_day'];            
+        }
+        if (isset($this->request->post['order_requested_time'])) {
+            $this->session->data['order_requested_time'] = $this->request->post['order_requested_time'];            
+        }
+        $this->response->setOutput(json_encode(array()));
+    }
+
+     public function carttimedata(){
+        $this->language->load('checkout/checkout');            
+        $this->data['column_name'] = $this->language->get('column_name');
+        $this->data['column_model'] = $this->language->get('column_model');
+        $this->data['column_quantity'] = $this->language->get('column_quantity');
+        $this->data['column_price'] = $this->language->get('column_price');
+        $this->data['column_total'] = $this->language->get('column_total');
+        $this->data['products'] = array();
+        $this->load->model('catalog/product');
+        $categories = $this->postcode->getcategories();
+                    $today_times = $this->postcode->getTodayStoretime();
+                    if($today_times && !empty($today_times)){
+                        $today = strtolower(date('l',$today_times['start']));
+                    }else{
+                        $today = strtolower(date('l'));
+                    }
+        foreach ($this->cart->getProducts() as $product) {
+                $product_times = array();
+                $product_time_text = '';
+                if($product['specific_time']==1){
+                    if(!empty($product['available_times']) && isset($product['available_times'][$today])){
+                        if($product['available_times'][$today][0]['start']!=''){
+                            $product_times = $product['available_times'][$today];
+                        }else{
+                            $product_time_text = 'Not Available Today';
+                        }                                                
+                    }else{
+                        //Not Available Today
+                        $product_time_text = 'Not Available Today';
+                    }
+                }else{
+                    $product_categories = $this->model_catalog_product->getProductCategories($product['product_id']);
+                    $category_id = 0;
+                    foreach ($product_categories as $prd_category_id) {
+                         if(in_array($prd_category_id, $categories)){
+                            $category_id =$prd_category_id;
+                             break;
+                        }
+                    }
+                    $cat_times = $this->model_catalog_product->getProductCategoryTimes($category_id); 
+                    if($cat_times['specific_time']==1){
+                        //print_r($cat_times['available_time']);
+                        if(!empty($cat_times['available_time']) && isset($cat_times['available_time'][$today])){
+                            if($cat_times['available_time'][$today][0]['start']!=''){
+                                $product_times = $cat_times['available_time'][$today];
+                            }else{
+                                $product_time_text = 'Not Available Today';
+                            }                            
+                        }else{
+                            //Not Available Today
+                            $product_time_text = 'Not Available Today';
+                        }
+                    }
+                    
+                }
+                $option_data = array();
+                foreach ($product['option'] as $option) {
+                    if ($option['type'] != 'file') {
+                        $value = $option['option_value'];
+                    } else {
+                        $filename = $this->encryption->decrypt($option['option_value']);
+
+                        $value = utf8_substr($filename, 0, utf8_strrpos($filename, '.'));
+                    }
+
+                    $option_data[] = array(
+                        'name' => $option['name'],
+                        'value' => (utf8_strlen($value) > 20 ? utf8_substr($value, 0, 20) . '..' : $value)
+                    );
+                }
+                $productbundle = array();
+                foreach ($product['bundled_data'] as $bundled_product) {
+                $bundle_options = array();
+                foreach ($bundled_product['option'] as $option) {
+                    if ($option['type'] != 'file') {
+                        $value = $option['option_value'];
+                    } else {
+                        $filename = $this->encryption->decrypt($option['option_value']);
+
+                        $value = utf8_substr($filename, 0, utf8_strrpos($filename, '.'));
+                    }
+
+                    $bundle_options[] = array(
+                        'name' => $option['name'],
+                        'value' => (utf8_strlen($value) > 20 ? utf8_substr($value, 0, 20) . '..' : $value),
+                        'type' => $option['type']
+                    );
+                }
+                if (($this->config->get('config_customer_price') && $this->customer->isLogged()) || !$this->config->get('config_customer_price')) {
+                    $price = $this->currency->format($this->tax->calculate($bundled_product['price'], $bundled_product['tax_class_id'], $this->config->get('config_tax')));
+                } else {
+                    $price = false;
+                }
+
+                // Display prices
+                if (($this->config->get('config_customer_price') && $this->customer->isLogged()) || !$this->config->get('config_customer_price')) {
+                    $total = $this->currency->format($this->tax->calculate($bundled_product['price'], $bundled_product['tax_class_id'], $this->config->get('config_tax')) * $bundled_product['quantity']);
+                } else {
+                    $total = false;
+                }
+                //$chk_default_options = $this->model_catalog_product->getDefaultOptions($bundled_product['product_id']);
+                $productbundle[] = array(
+                    'product_id' => $bundled_product['product_id'],
+                   // 'thumb' => $image,
+                    'name' => $bundled_product['name'],
+                    'model' => $bundled_product['model'],
+                    'option' => $bundle_options,
+                    'quantity' => $bundled_product['quantity'],
+                    'price' => $price,
+                    'total' => $total,
+                    'href' => $this->url->link('product/product', 'product_id=' . $product['product_id']),
+                        // 'default' => (!empty($chk_default_options) ? 1 : 0)
+                );
+            }
+                $this->data['products'][] = array(
+                    'product_id' => $product['product_id'],
+                    'name' => $product['name'],
+                    'option' => $option_data,                   
+                    'remove' => $this->url->link('checkout/cart', 'remove=' . $product['key'].'&final=1'),
+                    'bundle'=>$productbundle,
+                    'available_times'=> $product_times,
+                    'time_description'=> $product_time_text
+                );
+            }
+        if (file_exists(DIR_TEMPLATE . $this->config->get('config_template') . '/template/checkout/cart_times.tpl')) {
+            $this->template = $this->config->get('config_template') . '/template/checkout/cart_times.tpl';
+        } else {
+            $this->template = 'default/template/checkout/cart_times.tpl';
+        }
+
+        $this->response->setOutput($this->render());
+    }
+
+    public function newpostcode() {
+        $this->language->load('checkout/checkout');
+        $json = array();
+        
+        $this->log->write(print_r(array("SET NEW POSTCODE"),true));
+        $this->log->write(print_r(array($this->session->data),true));
+        $this->log->write(print_r(array($this->request->post),true));
+        $this->log->write(print_r(array($this->request->get),true));
+        if(isset($this->request->post['postcode'])) {
+            $postcode = $this->request->post['postcode'];
+            $postal_code=$this->postcode->postcodeformat($postcode);
+            $destination_Lag = $this->postcode->getPostcodeDetails($postal_code);
+        } else {
+            $destination_Lag = '';
+        }
+        if(!$destination_Lag){
+            $json['error']['postcode'] = $this->language->get('error_postcode');
+            unset( $this->session->data['shipping_address_id']);
+            unset( $this->session->data['postcode']);
+        }
+        else {
+            $this->session->data['postcode'] = $postal_code;
+            unset($this->session->data['shipping_method']);						
+            // unset($this->session->data['shipping_methods']); #TODO
+            unset( $this->session->data['shipping_address_id']);
+        }
+        $this->response->setOutput(json_encode($json)); 
+    }
+    
+}
+
+?>

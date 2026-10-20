@@ -1,0 +1,86 @@
+/* 
+    Document   : fbmenu
+    Created on : 10 Jul, 2012, 2:22:10 PM
+    Author     : Jyothish
+    Description:
+        Purpose of the stylesheet follows.
+*/
+#accordion {
+	font-size:13px;
+	}
+#accordion ul {
+    list-style: none;
+	margin: 0;
+    padding: 0;
+}
+#accordion ul li.productoursite{
+    margin: 5px 5px 3px 5px;
+    text-align: left;
+    border-bottom: 1px solid #e6e6e6;
+    padding-bottom: 3px;
+}
+#accordion .orderoursite{
+    height: 50px;
+    text-align: center;
+    padding-top: 10px;
+}
+#accordion .prodname {
+    width: auto;
+    display: inline-block;
+}
+#accordion .prodprice {
+    display: inline-block;
+    float: right;
+    text-align: right;
+    width: 80px;
+}
+#accordion .ui-widget-content {
+	background:#FFFFFF;
+	padding-left: 18px;
+	}
+.ui-state-default, .ui-widget-content .ui-state-default, .ui-widget-header .ui-state-default {
+	background: #EDEFF4;
+	border-radius: 0 0 0 0;
+	border: 1px solid #D7D7D7;
+	}
+.ui-accordion .ui-accordion-header:hover {
+	background-color:#F2F2f2;
+	color: #476DBB !important;
+	}
+.ui-state-active, .ui-widget-content .ui-state-active, .ui-widget-header .ui-state-active {
+	border: 1px solid #D7D7D7;
+	border-radius: 0 0 0 0;
+	background:#F2F2F2;
+	color: #476DBB !important;
+	}
+.ui-state-default a, .ui-state-default a:link, .ui-state-default a:visited {
+	color: #3B5998;
+    font-family: "lucida grande",tahoma,verdana,arial,sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+	}
+.ui-state-active a, .ui-state-active a:link, .ui-state-active a:visited {
+	color: #476DBB !important;
+	font-family: "lucida grande",tahoma,verdana,arial,sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+	}
+.ui-icon-triangle-1-e {
+	background: url(images/ui-icons_ef8c08_256x240.png) -32px -16px !important;
+}
+.ui-state-active .ui-icon {
+	background: url(images/ui-icons_ef8c08_256x240.png) -64px -16px !important;
+}
+.order_button a {
+    background-color: #5B79B8;
+    color: #FFFFFF;
+    font-weight: bold;
+    padding: 7px 10px;
+    text-decoration: none;
+}
+.order_button a:hover {
+    background-color: #3b5998;
+	}
+.ui-widget-content a {
+	text-decoration: none;
+	}

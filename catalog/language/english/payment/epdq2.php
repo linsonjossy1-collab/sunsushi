@@ -1,0 +1,15 @@
+<?php
+// Heading
+$_['heading_title']     = 'Thank you for shopping with %s .... ';
+$_['error_title']     = 'Payment Error ';
+
+// Text
+$_['text_title']        = 'Credit Card / Debit Card';
+$_['text_response']     = 'Response from Barclays ePDQ:';
+$_['text_success']      = '... your payment was successfully received.';
+$_['text_success_wait'] = '<b><span style="color: #FF0000">Please wait...</span></b> whilst we finish processing your order.<br>If you are not automatically re-directed in 10 seconds, please click <a href="%s">here</a>.';
+$_['text_failure']      = 'There is a problem with your payment: <b>NCRERROR %s</b>';
+$_['text_failure_wait'] = '<a href="%s"><b><span style="color: #FF0000">Click here </span></b>to checkout again.';	
+
+$_['text_payment_commision'] = "Service Charge";
+$_['text_payment_commision_charges']    = "";

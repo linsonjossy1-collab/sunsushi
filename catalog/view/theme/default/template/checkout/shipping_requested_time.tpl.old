@@ -1,0 +1,12 @@
+
+<h3> <?php  echo $text_requested_time; ?></h3>  
+ <select name="order_requested_time" id="order_requested_time" class="form-control">
+    <?php foreach ($requested_times as  $key=>$requested_time) { ?>
+    <?php if ($key == $order_requested_time) { ?>
+    <option value="<?php echo $key; ?>" selected="selected"><?php echo $requested_time; ?></option>
+    <?php } else { ?>
+    <option value="<?php echo $key; ?>"><?php echo $requested_time; ?></option>
+    <?php } ?>
+    <?php } ?>
+</select>
+

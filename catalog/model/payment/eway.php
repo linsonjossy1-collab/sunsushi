@@ -1,0 +1,48 @@
+<?php
+class ModelPaymentEway extends Model {
+    public function getMethod($address) {
+        $this->load->language('payment/eway');
+
+        if ($this->config->get('eway_status')) {
+            $query = $this->db->query("SELECT * FROM " . DB_PREFIX . "zone_to_geo_zone WHERE geo_zone_id = '" . (int)$this->config->get('eway_standard_geo_zone_id') . "' AND country_id = '" . (int)$address['country_id'] . "' AND (zone_id = '" . (int)$address['zone_id'] . "' OR zone_id = '0')");
+            if (! $this->config->get('eway_standard_geo_zone_id')) {
+                $status = true;
+            } elseif ($query->num_rows) {
+                $status = true;
+            } else {
+                $status = false;
+            }
+        } else {
+            $status = false;
+        }
+
+        $method_data = array();
+        if ($status) {
+	    $title = $this->language->get('text_title');
+	    $payment_type = $this->config->get('eway_payment_type');
+	    if (in_array('paypal', $payment_type)) {
+		$title .= ' or PayPal';
+	    }
+//	    if (in_array('masterpass', $payment_type)) {
+//		$title .= ' or MasterPass';
+//	    }
+//	    if (in_array('vme', $payment_type)) {
+//		$title .= ' or V.me';
+//	    }
+            $method_data = array(
+                'code'       => 'eway',
+                'title'      => $title,
+                'sort_order' => $this->config->get('eway_sort_order')
+            );
+        }
+
+        return $method_data;
+    }
+
+    public function addOrder($order_data) {
+        $this->db->query("INSERT INTO `" . DB_PREFIX . "eway_order` SET `order_id` = '" . (int) $order_data['order_id'] . "', `created` = NOW(), `modified` = NOW(), `debug_data` = '" . $this->db->escape($order_data['debug_data']) . "', `amount` = '" . (double) $order_data['amount'] . "', `transaction_id` = '" . $this->db->escape($order_data['transaction_id']) . "'");
+
+        return $this->db->getLastId();
+    }
+}
+?>
