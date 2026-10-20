@@ -4,7 +4,7 @@
          
         <div class="product-img-left">  
             <div class="product_image">
-            <img src="<?php echo $thumb; ?>" alt="<?php echo $thumb; ?>" title="<?php echo $thumb; ?>" loading="lazy" />
+            <img src="<?php echo $thumb; ?>" alt="<?php echo $thumb; ?>" title="<?php echo $thumb; ?>"<?php if (!empty($thumb_width) && !empty($thumb_height)) { ?> width="<?php echo (int)$thumb_width; ?>" height="<?php echo (int)$thumb_height; ?>"<?php } ?> loading="lazy" />
                 <div class="productdetails">
                 
                 </div>

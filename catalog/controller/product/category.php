@@ -807,12 +807,16 @@ class ControllerProductCategory extends Controller {
 
     private function getProductLayout($product,$filter=array()) {
         $template = new Template();
+        // Use the resized image URL (cacheable, lazy-loadable) instead of downloading
+        // the image over HTTP and inlining it as base64 into the menu HTML.
+        $thumb_width = (int) $this->config->get('config_image_product_width');
+        $thumb_height = (int) $this->config->get('config_image_product_height');
         if ($product['image']) {
             $image = $this->model_tool_image->resize($product['image'], $this->config->get('config_image_product_width'), $this->config->get('config_image_product_height'));
-           $image = HTTPS_IMAGE.''.$product['image'];
-            $image = 'data:images/jpg;base64,' . base64_encode(file_get_contents(HTTPS_IMAGE.''.$product['image']));
-            $image ='data:images/png;base64,' . base64_encode(file_get_contents($this->model_tool_image->resize($product['image'], $this->config->get('config_image_product_width'), $this->config->get('config_image_product_height'))));
-      
+            if (!$image) {
+                // resize() returns nothing when the source file is missing.
+                $image = false;
+            }
         } else {
             $image = false;
         }
@@ -854,6 +858,8 @@ class ControllerProductCategory extends Controller {
         $template->data += array(
             'product_id' => $product['product_id'],
             'thumb' => $image,
+            'thumb_width' => $thumb_width,
+            'thumb_height' => $thumb_height,
             'name' => $product['name'],
             'description' => html_entity_decode($product['description'], ENT_QUOTES, 'UTF-8'),
             'price' => $price,

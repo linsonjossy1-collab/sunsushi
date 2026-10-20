@@ -18,9 +18,9 @@
             <?php foreach ($category['children'] as $child) { ?>
                 <li cid="<?php echo $child['category_id']; ?>" class="<?php if(!empty($child['shipping_methodes'])){ foreach($child['shipping_methodes'] as $catshipping1){ echo "p".$catshipping1." "; } } ?>">
               <?php if ($child['category_id'] == $child_id) { ?>
-              <a href="#cat_" class="active"><img src="<?php echo $child['image']; ?>" alt="<?php echo $child['image']; ?>" title="<?php echo $child['image']; ?>" class="img-responsive" /> <?php echo $child['name']; ?></a>
+              <a href="#cat_<?php echo $child['category_id']; ?>" class="active"><img src="<?php echo $child['image']; ?>" alt="<?php echo $child['image']; ?>" title="<?php echo $child['image']; ?>" class="img-responsive" /> <?php echo $child['name']; ?></a>
               <?php } else { ?>
-              <a href="#cat_"><img src="<?php echo $child['image']; ?>" alt="<?php echo $child['image']; ?>" title="<?php echo $child['image']; ?>" class="img-responsive" /> <?php echo $child['name']; ?></a>
+              <a href="#cat_<?php echo $child['category_id']; ?>"><img src="<?php echo $child['image']; ?>" alt="<?php echo $child['image']; ?>" title="<?php echo $child['image']; ?>" class="img-responsive" /> <?php echo $child['name']; ?></a>
               <?php } ?>
             </li>
             <?php } ?>
@@ -59,18 +59,25 @@ function scrollcatRight() {
 }
 
 $(document).ready(function () {
-	// Smooth scrolling when clicking on navigation links
-	$("a").on("click", function (event) {
-	  if (this.hash !== "") {
-		event.preventDefault();
-		const hash = this.hash;
+	// Smooth scrolling for the category navigation only (other links such as
+	// the Bootstrap tabs keep their own behaviour).
+	$(document).on("click", '#left-side-bar-category a[href^="#cat_"]', function (event) {
+	  event.preventDefault();
+	  const hash = this.hash;
+	  // Wait until every click handler on the <li> has run (show/hide of the
+	  // categories, switching back to the Menu tab) before measuring.
+	  setTimeout(function () {
+		const $target = $(hash);
+		if (!$target.length || !$target.is(":visible")) {
+		  return;
+		}
 		$("html, body").animate(
 		  {
-			scrollTop: $(hash).offset().top-200,
+			scrollTop: $target.offset().top-200,
 		  },
 		  800 // Adjust the speed of scrolling (in milliseconds) to your preference
 		);
-	  }
+	  }, 0);
 	});
         $(".allcattn a").on("click", function (event) {
             $('.prod_main_categories').show();

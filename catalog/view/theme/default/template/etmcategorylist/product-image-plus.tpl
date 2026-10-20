@@ -5,7 +5,7 @@
     
     <div class="product-img-left">
         <div class="product_image">
-        <img src="<?php echo $thumb; ?>" alt="<?php echo $thumb; ?>" title="<?php echo $thumb; ?>" loading="lazy" />
+        <img src="<?php echo $thumb; ?>" alt="<?php echo $thumb; ?>" title="<?php echo $thumb; ?>"<?php if (!empty($thumb_width) && !empty($thumb_height)) { ?> width="<?php echo (int)$thumb_width; ?>" height="<?php echo (int)$thumb_height; ?>"<?php } ?> loading="lazy" />
             <input type="hidden" name="product_id" size="2" value="<?php echo $product_id; ?>" />
             <div class="option">
                 <div class="productdetails">

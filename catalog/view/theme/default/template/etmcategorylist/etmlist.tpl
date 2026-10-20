@@ -95,6 +95,11 @@ window.dataLayer.push({
 </div>
 -->
 
+<style>
+/* Product thumbnails now carry width/height attributes (reserves space, less layout shift).
+   Keep the aspect ratio when the existing max-width:100% rule narrows them. */
+.product_image img{height:auto}
+</style>
 <div id="catpage">
 <div id="bgclr">
 <script>
@@ -123,21 +128,44 @@ $(function () {
 });
 </script>
 <script>
-if (typeof(Storage) !== "undefined") {
-    // Code for localStorage/sessionStorage.
-    if(sessionStorage.cached_time) {
-        if(sessionStorage.cached_time!=<?php echo $cached_time;?> ){
-            sessionStorage.clear();
-            sessionStorage.cached_time=<?php echo $cached_time;?>;
+var carprogresscount = 0;
+// Menu category cache. sessionStorage can be missing, blocked, or full
+// (QuotaExceededError on iOS Safari / in-app browsers), so every access is
+// wrapped: a storage failure only skips caching and never stops the menu.
+var etmMenuCache = (function () {
+    var store = null;
+    try {
+        if (typeof(Storage) !== "undefined" && window.sessionStorage) {
+            store = window.sessionStorage;
         }
-    
+    } catch (e) {
+        store = null;
     }
-    else {
-        sessionStorage.clear();
-        sessionStorage.cached_time=<?php echo $cached_time;?>;
+    return {
+        get: function (key) {
+            if (!store) { return null; }
+            try { return store.getItem(key); } catch (e) { return null; }
+        },
+        set: function (key, value) {
+            if (!store) { return false; }
+            try { store.setItem(key, value); return true; } catch (e) { return false; }
+        },
+        clear: function () {
+            if (!store) { return; }
+            try { store.clear(); } catch (e) {}
+        }
+    };
+})();
+if (etmMenuCache.get('cached_time')) {
+    if (etmMenuCache.get('cached_time') != <?php echo $cached_time;?> ) {
+        etmMenuCache.clear();
+        etmMenuCache.set('cached_time', <?php echo $cached_time;?>);
     }
 }
-var carprogresscount = 0;
+else {
+    etmMenuCache.clear();
+    etmMenuCache.set('cached_time', <?php echo $cached_time;?>);
+}
 function carprogressshow(){
     if(carprogresscount==0){
         $('.prgloader').hide();
@@ -224,8 +252,9 @@ $(function () {
             $(function() {
                 carprogresscount += 1;
                 carprogressshow();
-                if(typeof(Storage) !== "undefined" && sessionStorage.cached_cat_<?php echo  $key;?>) {
-                    $('#cat_<?php echo  $key;?>').html(sessionStorage.cached_cat_<?php echo  $key;?>);
+                var cachedcat = etmMenuCache.get('cached_cat_<?php echo  $key;?>');
+                if(cachedcat) {
+                    $('#cat_<?php echo  $key;?>').html(cachedcat);
                     carprogresscount -= 1;
                     carprogressshow();
                     $('.pcarry').hide();
@@ -245,10 +274,7 @@ $(function () {
                         $('#cat_<?php echo  $key;?>').html(data);
                         carprogresscount -= 1;
                         carprogressshow();
-                        if(typeof(Storage) !== "undefined"){
-                            sessionStorage.cached_cat_<?php echo  $key;?> = data;
-                        } 
-                        
+
                         checkitemisincart();
                         $('.pcarry').hide();
                         $('.pcollect').hide();
@@ -260,7 +286,9 @@ $(function () {
                             $(".p"+del[0]).show();
                         <?php }else{  ?>
                             $('.pcollect').show();
-                        <?php } ?> 
+                        <?php } ?>
+                        // Optional cache write, last so a full/blocked storage cannot skip the UI updates above.
+                        etmMenuCache.set('cached_cat_<?php echo  $key;?>', data);
                     }).fail(function() {
                      // alert( "error" );
                     });

@@ -3,7 +3,7 @@
    <div class="product-info_simple<?php echo(($options)?'':'without_opt');?>" id="product-info_<?php echo $parent_category_id.'_'.$product_id; ?>" >
                 <div class="product-det-left">
                  <div class="product_image">
-                   <img src="<?php echo $thumb; ?> " /> 
+                   <img src="<?php echo $thumb; ?> "<?php if (!empty($thumb_width) && !empty($thumb_height)) { ?> width="<?php echo (int)$thumb_width; ?>" height="<?php echo (int)$thumb_height; ?>"<?php } ?> /> 
 
                 </div>
                 </div>
