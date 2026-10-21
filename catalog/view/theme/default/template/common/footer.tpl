@@ -9,19 +9,19 @@
   <div class="footer-last-links" id="bottom-links">
     <div class="container">
       <div class="col-sm-4" id="contact_info">
-  <img src="image/data/hygiene.png" class="img-responsive" title="hygiene" alt="hygiene" loading="lazy" />
+  <img src="image/data/hygiene.png" class="img-responsive" title="hygiene" alt="hygiene" width="259" height="144" loading="lazy" />
   </div>
           <div class="col-sm-4 applinks text-center">
         <?php if($this->config->get('config_android_appurl')){ ?><p><strong>Download our app</strong></p>
-        <a class="android" href="<?php echo $this->config->get('config_android_appurl'); ?>" target="_blank"><img src="/catalog/view/theme/default/stylesheet/images/gplay.png" alt="android" title="android"></a>
+        <a class="android" href="<?php echo $this->config->get('config_android_appurl'); ?>" target="_blank"><img src="/catalog/view/theme/default/stylesheet/images/gplay.png" alt="android" title="android" width="130" height="40"></a>
         <?php } ?>
         <?php if($this->config->get('config_iphone_appurl')){ ?>
-        <a class="iphone" href="<?php echo $this->config->get('config_iphone_appurl'); ?>" target="_blank"><img src="/catalog/view/theme/default/stylesheet/images/appstore.png" alt="iphone" title="iphone"></a>
+        <a class="iphone" href="<?php echo $this->config->get('config_iphone_appurl'); ?>" target="_blank"><img src="/catalog/view/theme/default/stylesheet/images/appstore.png" alt="iphone" title="iphone" width="130" height="40"></a>
         <?php } ?>
       </div>
       <div class="col-sm-4">
       <p><strong>All Major Cards Accepted</strong></p>
-      <img src="imgd/card.png" class="img-responsive" loading="lazy" id="card" title="card" alt="card" style="margin:auto;    filter: contrast(0.5);">
+      <img src="imgd/card.png" class="img-responsive" width="341" height="30" loading="lazy" id="card" title="card" alt="card" style="margin:auto;    filter: contrast(0.5);">
       </div>
       <div class="col-sm-12" id="links">
         <ul>
