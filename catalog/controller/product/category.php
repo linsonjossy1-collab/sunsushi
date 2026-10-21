@@ -482,7 +482,27 @@ class ControllerProductCategory extends Controller {
                 unset($etmlistdata['payments']);
                 unset($etmlistdata['store_times']);
                 unset($etmlistdata['store_closed']);
-                $this->data +=$etmlistdata;    
+                $this->data +=$etmlistdata;
+            }
+
+            // Server-render the first menu categories (same cached HTML that
+            // getetmmaillayout returns) so the above-the-fold products and their
+            // images are in the initial document instead of waiting for AJAX.
+            // Stops at the first category whose layout is not cached; the rest
+            // (and that one) keep loading through getetmmaillayout as before.
+            $this->data['prerendered_categories'] = array();
+            if (!empty($this->data['category_layouts']) && is_array($this->data['category_layouts'])) {
+                $prerender_limit = 2;
+                foreach (array_keys($this->data['category_layouts']) as $prerender_id) {
+                    if (count($this->data['prerendered_categories']) >= $prerender_limit) {
+                        break;
+                    }
+                    $prerender_html = $this->cache->get('etmlist.layout' . '.' . (int) $prerender_id . '.' . (int) $this->config->get('config_store_id'));
+                    if (!is_string($prerender_html) || trim($prerender_html) === '') {
+                        break;
+                    }
+                    $this->data['prerendered_categories'][$prerender_id] = $prerender_html;
+                }
             }
 
             if (isset($this->session->data['grouporderclient'])) {
