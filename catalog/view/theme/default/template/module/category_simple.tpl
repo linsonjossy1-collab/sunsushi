@@ -14,13 +14,13 @@
           <?php if ($category['children']) { ?>
           <div class="cater" id="caterr">
           <ul class="scroll-content" id="left-side-bar-category">
-              <li class="side-cat-selected allcattn" ><a href=""><img src="/image/data/All.png" alt="all dishes" title="all dishes" /> All</a></li>
+              <li class="side-cat-selected allcattn" ><a href=""><img src="/image/data/All.png" alt="all dishes" title="all dishes" width="20" height="20" /> All</a></li>
             <?php foreach ($category['children'] as $child) { ?>
                 <li cid="<?php echo $child['category_id']; ?>" class="<?php if(!empty($child['shipping_methodes'])){ foreach($child['shipping_methodes'] as $catshipping1){ echo "p".$catshipping1." "; } } ?>">
               <?php if ($child['category_id'] == $child_id) { ?>
-              <a href="#cat_<?php echo $child['category_id']; ?>" class="active"><img src="<?php echo $child['image']; ?>" alt="<?php echo $child['image']; ?>" title="<?php echo $child['image']; ?>" class="img-responsive" /> <?php echo $child['name']; ?></a>
+              <a href="#cat_<?php echo $child['category_id']; ?>" class="active"><img src="<?php echo $child['image']; ?>" alt="<?php echo $child['image']; ?>" title="<?php echo $child['image']; ?>" class="img-responsive" width="32" height="32" /> <?php echo $child['name']; ?></a>
               <?php } else { ?>
-              <a href="#cat_<?php echo $child['category_id']; ?>"><img src="<?php echo $child['image']; ?>" alt="<?php echo $child['image']; ?>" title="<?php echo $child['image']; ?>" class="img-responsive" /> <?php echo $child['name']; ?></a>
+              <a href="#cat_<?php echo $child['category_id']; ?>"><img src="<?php echo $child['image']; ?>" alt="<?php echo $child['image']; ?>" title="<?php echo $child['image']; ?>" class="img-responsive" width="32" height="32" /> <?php echo $child['name']; ?></a>
               <?php } ?>
             </li>
             <?php } ?>

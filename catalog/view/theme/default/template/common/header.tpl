@@ -270,7 +270,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </div>
 </div>
 
-<span style="cursor:pointer;    padding: 0px 15px;" onclick="openNav()"><img src="/image/data/line2.png" class="img-responsive hamburgr" alt="hamburger" title="hamburger" /></span>
+<span style="cursor:pointer;    padding: 0px 15px;" onclick="openNav()"><img src="/image/data/line2.png" class="img-responsive hamburgr" alt="hamburger" title="hamburger" width="32" height="32" /></span>
 
 
     </div>

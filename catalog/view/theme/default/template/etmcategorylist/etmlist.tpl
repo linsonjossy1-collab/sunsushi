@@ -99,6 +99,9 @@ window.dataLayer.push({
 /* Product thumbnails now carry width/height attributes (reserves space, less layout shift).
    Keep the aspect ratio when the existing max-width:100% rule narrows them. */
 .product_image img{height:auto}
+/* Keep the footer below the fold while the menu categories are still loading,
+   so it is not pushed down (layout shift) as each category arrives. */
+#tabs.etm-loading{min-height:100vh}
 </style>
 <div id="catpage">
 <div id="bgclr">
@@ -181,6 +184,78 @@ function carprogressshow(){
          $('.prgloader').show();
     }
 }
+// Category responses can arrive in any order. Inserting them as they arrive
+// pushed already-visible categories and the footer down (layout shift), so
+// responses are buffered and inserted strictly in menu order. A category that
+// is still missing after ETM_CAT_WAIT_MS stops holding back the ones after it.
+var ETM_CAT_WAIT_MS = 8000;
+var etmCatOrder = <?php echo json_encode(isset($category_layouts) && is_array($category_layouts) ? array_map('intval', array_keys($category_layouts)) : array()); ?>;
+var etmCatBuffer = {};
+var etmCatPassed = {};
+var etmCatNext = 0;
+function etmApplyMenuFilters() {
+    if (typeof checkitemisincart === 'function') {
+        checkitemisincart();
+    }
+    $('.pcarry').hide();
+    $('.pcollect').hide();
+    $('.phome').hide();
+    $('.pdine').hide();
+    <?php if(isset($delivery_method) && $delivery_method!=''){ ?>
+        var delmethode = '<?php echo $delivery_method; ?>';
+        del = delmethode.split(".");
+        $(".p"+del[0]).show();
+    <?php }else{  ?>
+        $('.pcollect').show();
+    <?php } ?>
+}
+function etmInsertCategory(id, html) {
+    // html === null means the request failed: leave the block empty, as before.
+    if (html !== null) {
+        $('#cat_' + id).html(html);
+    }
+    carprogresscount -= 1;
+    carprogressshow();
+}
+function etmFlushCategories(force) {
+    var inserted = false;
+    while (etmCatNext < etmCatOrder.length) {
+        var cid = etmCatOrder[etmCatNext];
+        if (etmCatBuffer.hasOwnProperty(cid)) {
+            var html = etmCatBuffer[cid];
+            delete etmCatBuffer[cid];
+            etmInsertCategory(cid, html);
+            inserted = true;
+        } else if (force) {
+            etmCatPassed[cid] = true; // still loading: insert it whenever it arrives
+        } else {
+            break;
+        }
+        etmCatNext++;
+    }
+    if (etmCatNext >= etmCatOrder.length) {
+        $('#tabs').removeClass('etm-loading');
+    }
+    if (inserted) {
+        etmApplyMenuFilters();
+    }
+}
+function etmCategoryReady(id, html) {
+    if (etmCatPassed[id]) {
+        delete etmCatPassed[id];
+        etmInsertCategory(id, html);
+        etmApplyMenuFilters();
+        return;
+    }
+    etmCatBuffer[id] = html;
+    etmFlushCategories(false);
+}
+$(function () {
+    if (!etmCatOrder.length) {
+        $('#tabs').removeClass('etm-loading');
+    }
+    setTimeout(function () { etmFlushCategories(true); }, ETM_CAT_WAIT_MS);
+});
 $(function () {
     var msie6 = $.browser == 'msie' && $.browser.version < 7;
     if ($(window).width()>= 768 && !msie6) {
@@ -241,8 +316,8 @@ $(function () {
 
   <div class="tab-content">
       <div role="tabpanel" class="tab-pane active" id="menutab">
-          <div id="tabs">
-         
+          <div id="tabs" class="etm-loading">
+
         <?php foreach($category_layouts as $key=>$layout){ ?>
         <div id="cat_<?php echo  $key;?>" class="prod_main_categories  <?php if(isset($category_shippings[$key])){ foreach($category_shippings[$key] as $catshipping){ echo "p".$catshipping." "; } } ?>">
             
@@ -254,43 +329,19 @@ $(function () {
                 carprogressshow();
                 var cachedcat = etmMenuCache.get('cached_cat_<?php echo  $key;?>');
                 if(cachedcat) {
-                    $('#cat_<?php echo  $key;?>').html(cachedcat);
-                    carprogresscount -= 1;
-                    carprogressshow();
-                    $('.pcarry').hide();
-                    $('.pcollect').hide();
-                    $('.phome').hide();
-                    $('.pdine').hide();
-                    <?php if(isset($delivery_method) && $delivery_method!=''){ ?>
-                        var delmethode = '<?php echo $delivery_method; ?>';
-                        del = delmethode.split(".");
-                        $(".p"+del[0]).show();
-                    <?php }else{  ?>
-                        $('.pcollect').show();
-                    <?php } ?> 
+                    // Inserted in menu order, then cart badges + delivery/collection filter.
+                    etmCategoryReady(<?php echo (int) $key; ?>, cachedcat);
                 }
                 else {
                     $.get( "index.php?route=product/category/getetmmaillayout&category_id=<?php echo  $key;?>", function(data) {
-                        $('#cat_<?php echo  $key;?>').html(data);
-                        carprogresscount -= 1;
-                        carprogressshow();
-
-                        checkitemisincart();
-                        $('.pcarry').hide();
-                        $('.pcollect').hide();
-                        $('.phome').hide();
-                        $('.pdine').hide();
-                        <?php if(isset($delivery_method) && $delivery_method!=''){ ?>
-                            var delmethode = '<?php echo $delivery_method; ?>';
-                            del = delmethode.split(".");
-                            $(".p"+del[0]).show();
-                        <?php }else{  ?>
-                            $('.pcollect').show();
-                        <?php } ?>
+                        // Inserted in menu order, then cart badges + delivery/collection filter.
+                        etmCategoryReady(<?php echo (int) $key; ?>, data);
                         // Optional cache write, last so a full/blocked storage cannot skip the UI updates above.
                         etmMenuCache.set('cached_cat_<?php echo  $key;?>', data);
                     }).fail(function() {
                      // alert( "error" );
+                        // Release the categories queued behind this one.
+                        etmCategoryReady(<?php echo (int) $key; ?>, null);
                     });
                 }
             });
