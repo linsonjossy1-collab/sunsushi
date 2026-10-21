@@ -95,6 +95,18 @@ window.dataLayer.push({
 </div>
 -->
 
+<?php
+// Categories rendered into the page by the controller (see prerendered_categories).
+$etm_prerendered = (isset($prerendered_categories) && is_array($prerendered_categories)) ? $prerendered_categories : array();
+// Selected order method, same rule as the JS filter: "home.home" -> "home", none -> "collect".
+$etm_menu_method = 'collect';
+if (isset($delivery_method) && $delivery_method != '') {
+    $etm_method_parts = explode('.', $delivery_method);
+    $etm_menu_method = preg_replace('/[^A-Za-z0-9_-]/', '', $etm_method_parts[0]);
+}
+// Images in prerendered categories are above the fold: load them normally, not lazily.
+$etm_eager_images = 6;
+?>
 <style>
 /* Product thumbnails now carry width/height attributes (reserves space, less layout shift).
    Keep the aspect ratio when the existing max-width:100% rule narrows them. */
@@ -102,6 +114,14 @@ window.dataLayer.push({
 /* Keep the footer below the fold while the menu categories are still loading,
    so it is not pushed down (layout shift) as each category arrives. */
 #tabs.etm-loading{min-height:100vh}
+<?php if ($etm_prerendered && $etm_menu_method !== '') { ?>
+/* Until the JS delivery/collection filter first runs, apply the same filter in CSS
+   to the server-rendered categories so hidden items never flash in and shift the page. */
+#tabs.etm-prefilter .pcarry:not(.p<?php echo $etm_menu_method; ?>),
+#tabs.etm-prefilter .pcollect:not(.p<?php echo $etm_menu_method; ?>),
+#tabs.etm-prefilter .phome:not(.p<?php echo $etm_menu_method; ?>),
+#tabs.etm-prefilter .pdine:not(.p<?php echo $etm_menu_method; ?>){display:none}
+<?php } ?>
 </style>
 <div id="catpage">
 <div id="bgclr">
@@ -208,9 +228,11 @@ function etmApplyMenuFilters() {
     <?php }else{  ?>
         $('.pcollect').show();
     <?php } ?>
+    $('#tabs').removeClass('etm-prefilter');
 }
 function etmInsertCategory(id, html) {
-    // html === null means the request failed: leave the block empty, as before.
+    // html === null: keep what is already in the block (request failed, or the
+    // category was rendered into the page by the server).
     if (html !== null) {
         $('#cat_' + id).html(html);
     }
@@ -316,17 +338,36 @@ $(function () {
 
   <div class="tab-content">
       <div role="tabpanel" class="tab-pane active" id="menutab">
-          <div id="tabs" class="etm-loading">
+          <div id="tabs" class="etm-loading<?php echo $etm_prerendered ? ' etm-prefilter' : ''; ?>">
 
         <?php foreach($category_layouts as $key=>$layout){ ?>
         <div id="cat_<?php echo  $key;?>" class="prod_main_categories  <?php if(isset($category_shippings[$key])){ foreach($category_shippings[$key] as $catshipping){ echo "p".$catshipping." "; } } ?>">
             
            <?php // echo $layout; ?>
+           <?php if (isset($etm_prerendered[$key])) {
+               // Server-rendered category: make its first images eager (likely LCP).
+               $etm_html = $etm_prerendered[$key];
+               $etm_out = '';
+               $etm_pos = 0;
+               while ($etm_eager_images > 0 && preg_match('/<img\b[^>]*>/i', $etm_html, $etm_m, PREG_OFFSET_CAPTURE, $etm_pos)) {
+                   $etm_tag = preg_replace('/\s+loading=(["\'])lazy\1/i', '', $etm_m[0][0]);
+                   $etm_out .= substr($etm_html, $etm_pos, $etm_m[0][1] - $etm_pos) . $etm_tag;
+                   $etm_pos = $etm_m[0][1] + strlen($etm_m[0][0]);
+                   $etm_eager_images--;
+               }
+               echo $etm_out . substr($etm_html, $etm_pos);
+           } ?>
         </div>
             <script type="text/javascript">
             $(function() {
                 carprogresscount += 1;
                 carprogressshow();
+                <?php if (isset($etm_prerendered[$key])) { ?>
+                // Already in the page: no request; just count it and run the usual
+                // post-insert step (cart badges + delivery/collection filter) in order.
+                etmCategoryReady(<?php echo (int) $key; ?>, null);
+                return;
+                <?php } ?>
                 var cachedcat = etmMenuCache.get('cached_cat_<?php echo  $key;?>');
                 if(cachedcat) {
                     // Inserted in menu order, then cart badges + delivery/collection filter.

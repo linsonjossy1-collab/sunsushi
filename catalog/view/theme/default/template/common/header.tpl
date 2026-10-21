@@ -140,15 +140,11 @@ $request_uri = strtolower(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
       fetchpriority="high">
 
 
-<link rel="preload"
-      href="/scss/stylesheets.css"
-      as="style"
-      onload="this.onload=null;this.rel='stylesheet'">
-
-<noscript>
+<!-- Main site stylesheet loads before first paint (was async preload): painting
+     unstyled and then restyling shifted the whole page (CLS). Same position as
+     before, so the cascade order with bootstrap.min.css is unchanged. -->
 <link rel="stylesheet"
       href="/scss/stylesheets.css">
-</noscript>
 <?php foreach ($styles as $style) { ?>
 <link rel="<?php echo $style['rel']; ?>" type="text/css" href="<?php echo $style['href']; ?>" media="<?php echo $style['media']; ?>" />
 <?php } ?>
@@ -177,15 +173,9 @@ $request_uri = strtolower(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
 <?php } ?>
 
 
-<link rel="preload"
-      href="catalog/view/theme/default/stylesheet/css/bootstrap.min.css"
-      as="style"
-      onload="this.onload=null;this.rel='stylesheet'">
-
-<noscript>
-    <link rel="stylesheet"
-          href="catalog/view/theme/default/stylesheet/css/bootstrap.min.css">
-</noscript>
+<!-- Bootstrap grid loads before first paint (was async preload), for the same reason. -->
+<link rel="stylesheet"
+      href="catalog/view/theme/default/stylesheet/css/bootstrap.min.css">
 
 <script type="text/javascript" src="catalog/view/javascript/bootstrap.min.js" defer></script>
 
