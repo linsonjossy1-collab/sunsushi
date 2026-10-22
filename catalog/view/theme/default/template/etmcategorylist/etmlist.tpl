@@ -120,6 +120,10 @@ $etm_priority_images = 2;
 /* Category nav icons carry width/height="32" for layout stability; keep their
    aspect ratio wherever the theme CSS narrows them (e.g. width:20px). */
 #left-side-bar-category img{height:auto}
+/* The theme animates every property of the category links (transition: all .3s), so a
+   size change (e.g. when the web font swaps in) slid the nav items across ~20 frames,
+   each counted as a layout shift. Animate only the hover/selected colours instead. */
+.box-category ul li a{transition-property:background-color,color,box-shadow}
 <?php if ($etm_prerendered && $etm_menu_method !== '') { ?>
 /* Until the JS delivery/collection filter first runs, apply the same filter in CSS
    to the server-rendered categories so hidden items never flash in and shift the page. */
