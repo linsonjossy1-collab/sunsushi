@@ -136,9 +136,17 @@ $request_uri = strtolower(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
 <link rel="preload"
       href="/imgd/sunsushilogo.webp"
       as="image"
-      type="image/webp"
-      fetchpriority="high">
+      type="image/webp">
 
+
+<!-- Body/nav font (DM Sans, font-display:swap). Preloaded so it is ready by first
+     paint: swapping it in later changed text widths and re-wrapped the category
+     nav (layout shift). Fonts are fetched in CORS mode, so crossorigin is required. -->
+<link rel="preload"
+      href="/catalog/view/theme/default/stylesheet/fonts/DMSans-9ptRegular.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin>
 
 <!-- Main site stylesheet loads before first paint (was async preload): painting
      unstyled and then restyling shifted the whole page (CLS). Same position as
@@ -234,7 +242,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <a href="<?php echo $home; ?>">
           <picture>
     <source srcset="<?php echo str_replace(array('.png','.jpg','.jpeg'), '.webp', $logo); ?>" type="image/webp">
-    <img src="<?php echo $logo; ?>" title="<?php echo $name; ?>" alt="<?php echo $name; ?>" class="img-responsive" width="180" height="63" fetchpriority="high">
+    <img src="<?php echo $logo; ?>" title="<?php echo $name; ?>" alt="<?php echo $name; ?>" class="img-responsive" width="180" height="63">
 </picture></a>
 
 
