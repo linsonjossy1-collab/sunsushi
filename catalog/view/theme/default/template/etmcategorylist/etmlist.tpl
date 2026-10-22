@@ -106,6 +106,9 @@ if (isset($delivery_method) && $delivery_method != '') {
 }
 // Images in prerendered categories are above the fold: load them normally, not lazily.
 $etm_eager_images = 6;
+// The first product thumbnails are the LCP element (e.g. the first bubble tea photos):
+// ask the browser to fetch them ahead of other images.
+$etm_priority_images = 2;
 ?>
 <style>
 /* Product thumbnails now carry width/height attributes (reserves space, less layout shift).
@@ -114,6 +117,9 @@ $etm_eager_images = 6;
 /* Keep the footer below the fold while the menu categories are still loading,
    so it is not pushed down (layout shift) as each category arrives. */
 #tabs.etm-loading{min-height:100vh}
+/* Category nav icons carry width/height="32" for layout stability; keep their
+   aspect ratio wherever the theme CSS narrows them (e.g. width:20px). */
+#left-side-bar-category img{height:auto}
 <?php if ($etm_prerendered && $etm_menu_method !== '') { ?>
 /* Until the JS delivery/collection filter first runs, apply the same filter in CSS
    to the server-rendered categories so hidden items never flash in and shift the page. */
@@ -351,6 +357,11 @@ $(function () {
                $etm_pos = 0;
                while ($etm_eager_images > 0 && preg_match('/<img\b[^>]*>/i', $etm_html, $etm_m, PREG_OFFSET_CAPTURE, $etm_pos)) {
                    $etm_tag = preg_replace('/\s+loading=(["\'])lazy\1/i', '', $etm_m[0][0]);
+                   // Product thumbnails have width/height attributes (category header images do not).
+                   if ($etm_priority_images > 0 && preg_match('/\swidth=/i', $etm_tag) && !preg_match('/\ssrc=(["\'])\s*\1/i', $etm_tag) && stripos($etm_tag, 'fetchpriority') === false) {
+                       $etm_tag = preg_replace('/\s*\/?>$/', ' fetchpriority="high" />', $etm_tag, 1);
+                       $etm_priority_images--;
+                   }
                    $etm_out .= substr($etm_html, $etm_pos, $etm_m[0][1] - $etm_pos) . $etm_tag;
                    $etm_pos = $etm_m[0][1] + strlen($etm_m[0][0]);
                    $etm_eager_images--;
