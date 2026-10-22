@@ -139,6 +139,15 @@ $request_uri = strtolower(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
       type="image/webp">
 
 
+<!-- Body/nav font (DM Sans, font-display:swap). Preloaded so it is ready by first
+     paint: swapping it in later changed text widths and re-wrapped the category
+     nav (layout shift). Fonts are fetched in CORS mode, so crossorigin is required. -->
+<link rel="preload"
+      href="/catalog/view/theme/default/stylesheet/fonts/DMSans-9ptRegular.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin>
+
 <!-- Main site stylesheet loads before first paint (was async preload): painting
      unstyled and then restyling shifted the whole page (CLS). Same position as
      before, so the cascade order with bootstrap.min.css is unchanged. -->
