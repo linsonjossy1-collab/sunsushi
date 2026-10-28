@@ -53,7 +53,7 @@ class ControllerCheckoutPaymentMethodetm extends Controller {
 				if ($this->config->get($result['code'] . '_status')) {
 					$this->load->model('total/' . $result['code']);
 		
-					$this->{'model_total_' . $result['code']}->getTotal($total_data, $total, $taxes);
+					$etm_t = microtime(true); $this->{'model_total_' . $result['code']}->getTotal($total_data, $total, $taxes); $GLOBALS['etm_perf'][] = array('payment_methodetm total/' . $result['code'], microtime(true) - $etm_t); // timing for ?etm_perf=1
 				}
 			}
 
@@ -104,8 +104,8 @@ class ControllerCheckoutPaymentMethodetm extends Controller {
                     $this->load->model('payment/' . $result['code']);
 					if(method_exists($this->{'model_payment_' . $result['code']}, 'isposonly'))
                                      continue;
-					$method = $this->{'model_payment_' . $result['code']}->getMethod($payment_address, $total); 
-					
+					$etm_t = microtime(true); $method = $this->{'model_payment_' . $result['code']}->getMethod($payment_address, $total); 
+					 $GLOBALS['etm_perf'][] = array('payment_methodetm getMethod/' . $result['code'], microtime(true) - $etm_t); // timing for ?etm_perf=1
 					if ($method) {
                                             if($status_chk){
                                                 $method['code']='';

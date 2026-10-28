@@ -373,6 +373,14 @@ class ControllerCheckoutCheckoutetm extends Controller {
         );
 
         $etm_render_start = microtime(true);
+        if (isset($this->request->get['etm_perf'])) {
+            // Timing run only: render the layout children one by one (same as render()
+            // does internally: data[basename(route)] = getChild(route)) so each is timed.
+            foreach ($this->children as $etm_child) {
+                $this->data[basename($etm_child)] = $this->etmPerfChild($etm_child);
+            }
+            $this->children = array();
+        }
         $etm_output = $this->render();
         if (isset($this->request->get['etm_perf'])) {
             // Opt-in timing report (?etm_perf=1), appended as an HTML comment only.
@@ -380,6 +388,24 @@ class ControllerCheckoutCheckoutetm extends Controller {
             foreach ($this->etmPerfTimes as $etm_route => $etm_ms) {
                 $etm_lines[] = str_pad($etm_route, 48) . ' ' . $etm_ms . ' ms';
             }
+            // Inner timings recorded by other controllers (totals, payment checks, shipping quotes).
+            $etm_agg = array();
+            if (!empty($GLOBALS['etm_perf']) && is_array($GLOBALS['etm_perf'])) {
+                foreach ($GLOBALS['etm_perf'] as $etm_row) {
+                    if (!isset($etm_agg[$etm_row[0]])) {
+                        $etm_agg[$etm_row[0]] = array(0, 0);
+                    }
+                    $etm_agg[$etm_row[0]][0] += $etm_row[1];
+                    $etm_agg[$etm_row[0]][1]++;
+                }
+            }
+            $etm_lines[] = '--- inner (sum ms x calls) ---';
+            foreach ($etm_agg as $etm_label => $etm_v) {
+                if ($etm_v[0] >= 0.002 || $etm_v[1] > 1) {
+                    $etm_lines[] = str_pad($etm_label, 48) . ' ' . round($etm_v[0] * 1000, 1) . ' ms x' . $etm_v[1];
+                }
+            }
+            $etm_lines[] = '---';
             $etm_lines[] = str_pad('controller before render (incl. above)', 48) . ' ' . round(($etm_render_start - $etm_perf_start) * 1000, 1) . ' ms';
             $etm_lines[] = str_pad('render (header, footer, column_left, freeproducts, template)', 48) . ' ' . round((microtime(true) - $etm_render_start) * 1000, 1) . ' ms';
             $etm_lines[] = str_pad('total checkoutetm/index', 48) . ' ' . round((microtime(true) - $etm_perf_start) * 1000, 1) . ' ms';

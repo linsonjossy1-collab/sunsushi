@@ -111,7 +111,7 @@ class ControllerCheckoutShippingPostcodes extends Controller {
                             if ($this->config->get($result['code'] . '_status')) {
                                 $this->load->model('shipping/' . $result['code']);
 
-                                $quote = $this->{'model_shipping_' . $result['code']}->getQuote($shipping_address);
+                                $etm_t = microtime(true); $quote = $this->{'model_shipping_' . $result['code']}->getQuote($shipping_address); $GLOBALS['etm_perf'][] = array('shipping_postcodes getQuote/' . $result['code'], microtime(true) - $etm_t); // timing for ?etm_perf=1
                                 if(isset($quote['delivery_msg_status']) && $quote['delivery_msg_status']!=''){
                                     $home_delivery_error =$quote['delivery_msg_status'];
                                 }
@@ -270,7 +270,7 @@ class ControllerCheckoutShippingPostcodes extends Controller {
                 if (method_exists($this->{'model_shipping_' . $result['code']}, 'isposonly') || $this->postcode->checkisDisabledfromEpos($result['code'])) {
                     continue;
                 }
-                $quote = $this->{'model_shipping_' . $result['code']}->getQuote($shipping_address);
+                $etm_t = microtime(true); $quote = $this->{'model_shipping_' . $result['code']}->getQuote($shipping_address); $GLOBALS['etm_perf'][] = array('shipping_postcodes getQuote/' . $result['code'], microtime(true) - $etm_t); // timing for ?etm_perf=1
                 // print_r($quote);
                 if ($quote) {
                     if(isset($quote['delivery_msg_status']) && $quote['delivery_msg_status']!=''){
@@ -456,7 +456,7 @@ class ControllerCheckoutShippingPostcodes extends Controller {
                 if (method_exists($this->{'model_shipping_' . $result['code']}, 'isposonly') || $this->postcode->checkisDisabledfromEpos($result['code'])) {
                     continue;
                 }
-                $quote = $this->{'model_shipping_' . $result['code']}->getQuote($shipping_address);
+                $etm_t = microtime(true); $quote = $this->{'model_shipping_' . $result['code']}->getQuote($shipping_address); $GLOBALS['etm_perf'][] = array('shipping_postcodes getQuote/' . $result['code'], microtime(true) - $etm_t); // timing for ?etm_perf=1
                 // print_r($quote);
                 if ($quote) {
                     if(isset($quote['delivery_msg_status']) && $quote['delivery_msg_status']!=''){
