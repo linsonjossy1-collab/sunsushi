@@ -225,7 +225,9 @@ class ControllerCommonHeader extends Controller {
                         'filter_sub_category' => true
                     );
 
-                    $product_total = $this->model_catalog_product->getTotalProducts($data);
+                    // Product counts are only shown when "Category Product Count" is enabled;
+                    // skip the COUNT queries otherwise (they ran for every category on every page).
+                    $product_total = $this->config->get('config_product_count') ? $this->model_catalog_product->getTotalProducts($data) : 0;
 
                     $children_data[] = array(
                         'category_id' => $child['category_id'],
