@@ -38,6 +38,7 @@ class ControllerCommonHeader extends Controller {
                 $this->data['shadow_menu'] = "<span class='error'>Shadow menu enabled.</span>";
             } 
         }
+        $etm_h = microtime(true); // timing for ?etm_perf=1
         // Whos Online
         if ($this->config->get('config_customer_online')) {
             $this->load->model('tool/online');
@@ -62,6 +63,7 @@ class ControllerCommonHeader extends Controller {
 
             $this->model_tool_online->whosonline($ip, $this->customer->getId(), $url, $referer);
         }
+        $GLOBALS['etm_perf'][] = array('header: whos online', microtime(true) - $etm_h); $etm_h = microtime(true); // timing for ?etm_perf=1
          //Dynamic Coupon To add
         if (isset($this->session->data['addcoupontype']) && $this->customer->isLogged()) {
             $customer_id = $this->customer->isLogged();
@@ -165,6 +167,7 @@ class ControllerCommonHeader extends Controller {
                 $this->data['shippingmethd'] = $this->session->data['delivery_method'];
             }
         }
+        $GLOBALS['etm_perf'][] = array('header: coupon, language, links, cart count', microtime(true) - $etm_h); $etm_h = microtime(true); // timing for ?etm_perf=1
         //$total = $this->cart->getTotal();
         $total_data = array();
         $total = 0;
@@ -204,6 +207,7 @@ class ControllerCommonHeader extends Controller {
         //$this->data['text_items'] = sprintf($this->language->get('text_items'),  $this->data['cart_count'] , $this->currency->format($total));
         $this->data['text_items'] = sprintf($this->language->get('text_total_items'), $this->currency->format($total),$this->data['cart_count']);
         $this->data['itemcount']=$this->cart->countProducts();
+        $GLOBALS['etm_perf'][] = array('header: totals (all models)', microtime(true) - $etm_h); $etm_h = microtime(true); // timing for ?etm_perf=1
         // Menu
         $this->load->model('catalog/category');
 
@@ -246,6 +250,7 @@ class ControllerCommonHeader extends Controller {
             }
         }
 
+        $GLOBALS['etm_perf'][] = array('header: categories', microtime(true) - $etm_h); $etm_h = microtime(true); // timing for ?etm_perf=1
         // Post code search 
         if (isset($this->session->data['grouporderclient'])) {
             $this->data['grouporder'] = 1;
@@ -273,6 +278,7 @@ class ControllerCommonHeader extends Controller {
         $this->data['postcodehome'] = $this->getChild('common/postcode/home');
         $this->data['itemcount'] = $this->cart->countProducts();
         $this->data['totalamount'] = $this->cart->getSubTotal();
+        $GLOBALS['etm_perf'][] = array('header: postcode/home child + subtotal', microtime(true) - $etm_h); $etm_h = microtime(true); // timing for ?etm_perf=1
         // Postcode search
 
         $this->children = array(
@@ -285,7 +291,9 @@ class ControllerCommonHeader extends Controller {
         //$this->data['facebookbutton'] = $this->getChild('common/postcode/facebookbutton');
         //$this->data['postcodebutton'] = $this->getChild('common/postcode/button');
         //$this->data['postcodehome'] = $this->getChild('common/postcode/home');
+        $GLOBALS['etm_perf'][] = array('header: socialmediabuttons child', microtime(true) - $etm_h); $etm_h = microtime(true); // timing for ?etm_perf=1
         $this->data['holiday_status'] =$this->postcode->isStoreHoliday();
+        $GLOBALS['etm_perf'][] = array('header: isStoreHoliday', microtime(true) - $etm_h); $etm_h = microtime(true); // timing for ?etm_perf=1
         $this->data['incart']=array();
         foreach ($this->cart->getProducts() as $product) {
             if(isset($this->data['incart'][$product['product_id']])){
@@ -299,8 +307,19 @@ class ControllerCommonHeader extends Controller {
         } else {
             $this->template = 'default/template/common/header.tpl';
         }
-
+        $GLOBALS['etm_perf'][] = array('header: incart loop', microtime(true) - $etm_h); $etm_h = microtime(true); // timing for ?etm_perf=1
+        if (isset($this->request->get['etm_perf'])) {
+            // Timing run only: render the sub-modules one by one, as render() would.
+            foreach ($this->children as $etm_child) {
+                $etm_c = microtime(true);
+                $this->data[basename($etm_child)] = $this->getChild($etm_child);
+                $GLOBALS['etm_perf'][] = array('header child: ' . $etm_child, microtime(true) - $etm_c);
+            }
+            $this->children = array();
+            $etm_h = microtime(true);
+        }
         $this->render();
+        $GLOBALS['etm_perf'][] = array('header: template render', microtime(true) - $etm_h); $etm_h = microtime(true); // timing for ?etm_perf=1
     }
 
 }
