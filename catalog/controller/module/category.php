@@ -34,7 +34,10 @@ class ControllerModuleCategory extends Controller {
 		foreach ($categories as $category) {
                         if($category['category_id'] != $this->data['category_id'] ) continue;
                         
-			$total = $this->model_catalog_product->getTotalProducts(array('filter_category_id'  => $category['category_id']));
+			// Counts are only displayed when "Category Product Count" is enabled; skip the
+			// COUNT queries otherwise (this module renders on the menu and checkout pages).
+			$etm_show_counts = (bool) $this->config->get('config_product_count');
+			$total = $etm_show_counts ? $this->model_catalog_product->getTotalProducts(array('filter_category_id'  => $category['category_id'])) : 0;
 
 			$children_data = array();
 
@@ -46,7 +49,7 @@ class ControllerModuleCategory extends Controller {
 					'filter_sub_category' => true
 				);
 
-				$product_total = $this->model_catalog_product->getTotalProducts($data);
+				$product_total = $etm_show_counts ? $this->model_catalog_product->getTotalProducts($data) : 0;
 
 				$total += $product_total;
                                     $children2_data = array();
