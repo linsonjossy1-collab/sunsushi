@@ -10,6 +10,8 @@ class Cart {
     private $session;
     private $tax;
     private $weight;
+    // Per-request cache of getProducts() (see getProducts() below).
+    private $etm_products_key = null;
 
     public function __construct($registry) {
         $this->config = $registry->get('config');
@@ -24,7 +26,51 @@ class Cart {
         }
     }
 
+    /*
+     * getProducts() used to rebuild the whole basket from the database on every call
+     * (the stock OpenCart cache "if (!$this->data)" was commented out). It is called
+     * dozens of times per page (countProducts, getSubTotal, getTotal, getTaxes,
+     * hasStock, hasShipping, each total model, header, cart modules...), and deal
+     * products re-run their bundle/option queries each time, so a basket with e.g.
+     * the Ramen & Katsu Deal made checkout take several seconds.
+     *
+     * Cache the result for the rest of the request, keyed on every input the build
+     * reads. Any change to those inputs rebuilds exactly as before. Only used on GET
+     * requests (page loads); POST requests (add to cart, order confirm, payment
+     * callbacks) always rebuild, as before.
+     */
     public function getProducts($cart=array()) {
+        $etm_key = $this->etmProductsCacheKey();
+        if ($etm_key !== null && $this->etm_products_key === $etm_key) {
+            return $this->data;
+        }
+        $etm_cart_before = $this->session->data['cart'];
+        $etm_result = $this->etmBuildProducts($cart);
+        // Do not cache a build that changed the basket itself (it removes unavailable
+        // items via remove(), which also resets $this->data mid-build).
+        $this->etm_products_key = ($etm_key !== null && $this->session->data['cart'] === $etm_cart_before) ? $etm_key : null;
+        return $etm_result;
+    }
+
+    private function etmProductsCacheKey() {
+        if (isset($_SERVER['REQUEST_METHOD']) && strtoupper($_SERVER['REQUEST_METHOD']) !== 'GET') {
+            return null;
+        }
+        $etm_logged = $this->customer->isLogged();
+        return md5(serialize(array(
+            isset($this->session->data['cart']) ? $this->session->data['cart'] : null,
+            isset($this->session->data['shipping_method']) ? $this->session->data['shipping_method'] : null,
+            isset($this->session->data['upselling_cart_products']) ? $this->session->data['upselling_cart_products'] : null,
+            isset($this->session->data['cartdiscount']) ? $this->session->data['cartdiscount'] : null,
+            $etm_logged,
+            $etm_logged ? $this->customer->getCustomerGroupId() : null,
+            $this->config->get('config_customer_group_id'),
+            $this->config->get('config_language_id'),
+        )));
+    }
+
+    // The original getProducts() body, unchanged.
+    private function etmBuildProducts($cart=array()) {
         //if (!$this->data) {
             if(!empty($cart)){
                 $cart_items = $cart;
@@ -1079,6 +1125,7 @@ class Cart {
         
         
         $this->data = array();
+        $this->etm_products_key = null;
         return $key;
     }
 
@@ -1115,6 +1162,7 @@ class Cart {
         }
 
         $this->data = array();
+        $this->etm_products_key = null;
     }
 
     public function remove($key) {
@@ -1141,11 +1189,13 @@ class Cart {
         }
 
         $this->data = array();
+        $this->etm_products_key = null;
     }
 
     public function clear() {
         $this->session->data['cart'] = array();
         $this->data = array();
+        $this->etm_products_key = null;
     }
 
     public function getWeight() {
