@@ -94,7 +94,7 @@ class ControllerCheckoutConfirmetm extends Controller {
                 if ($this->config->get($result['code'] . '_status')) {
                     $this->load->model('total/' . $result['code']);
 
-                    $etm_t = microtime(true); $this->{'model_total_' . $result['code']}->getTotal($total_data, $total, $taxes); $GLOBALS['etm_perf'][] = array('confirmetm total/' . $result['code'], microtime(true) - $etm_t); // timing for ?etm_perf=1
+                    $this->{'model_total_' . $result['code']}->getTotal($total_data, $total, $taxes);
                 }
             }
 
@@ -785,7 +785,7 @@ class ControllerCheckoutConfirmetm extends Controller {
                 if ($this->config->get($result['code'] . '_status')) {
                     $this->load->model('total/' . $result['code']);
 
-                    $etm_t = microtime(true); $this->{'model_total_' . $result['code']}->getTotal($total_data, $total, $taxes); $GLOBALS['etm_perf'][] = array('confirmetm total/' . $result['code'], microtime(true) - $etm_t); // timing for ?etm_perf=1
+                    $this->{'model_total_' . $result['code']}->getTotal($total_data, $total, $taxes);
                 }
             }
 

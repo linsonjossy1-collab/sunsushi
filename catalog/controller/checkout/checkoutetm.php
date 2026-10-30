@@ -3,7 +3,6 @@
 class ControllerCheckoutCheckoutetm extends Controller {
     private $error = array();
     public function index() {
-        $etm_perf_start = microtime(true);
         if(isset($this->session->data['mobileapp_payment'])) { // FROM MOBILE APP
             $this->log->write(' MOBILE PAYMENT');
             if (isset($this->session->data['mobileapp_inappsafari'])) {
@@ -289,26 +288,26 @@ class ControllerCheckoutCheckoutetm extends Controller {
           $this->data['logged'] = $this->customer->isLogged();
         $this->data['shipping_required'] = $this->cart->hasShipping();
         if (!$this->data['logged']) {
-            $this->data['login_content'] = $this->etmPerfChild('checkout/loginetm');
-            $this->data['register_content'] = $this->etmPerfChild('checkout/registeretm');
+            $this->data['login_content'] = $this->getChild('checkout/loginetm');
+            $this->data['register_content'] = $this->getChild('checkout/registeretm');
 
-            $this->data['guest_content'] = $this->etmPerfChild('checkout/guest');
+            $this->data['guest_content'] = $this->getChild('checkout/guest');
            
         } else {
             $this->data['login_content'] = '';
-            $this->data['register_content'] = $this->etmPerfChild('checkout/registeretm');
-            $this->data['payment_addressetm_content'] = $this->etmPerfChild('checkout/payment_addressetm');
+            $this->data['register_content'] = $this->getChild('checkout/registeretm');
+            $this->data['payment_addressetm_content'] = $this->getChild('checkout/payment_addressetm');
         }
-        $this->data['shipping_method'] = $this->etmPerfChild('checkout/shipping_methodetm');
-        $this->data['payment_method'] = $this->etmPerfChild('checkout/payment_methodetm');
+        $this->data['shipping_method'] = $this->getChild('checkout/shipping_methodetm');
+        $this->data['payment_method'] = $this->getChild('checkout/payment_methodetm');
         if(isset($this->session->data['product_no_times'])){
-            $this->data['confirm_content'] = $this->etmPerfChild('checkout/shipping_methodetm/carttimedata');
+            $this->data['confirm_content'] = $this->getChild('checkout/shipping_methodetm/carttimedata');
         }else{
-            $this->data['confirm_content'] = $this->etmPerfChild('checkout/confirmetm/finalcart');
+            $this->data['confirm_content'] = $this->getChild('checkout/confirmetm/finalcart');
         }
         
                    
-        $this->data['confirm_buttom'] = $this->etmPerfChild('checkout/confirmetm/confirmbutton');
+        $this->data['confirm_buttom'] = $this->getChild('checkout/confirmetm/confirmbutton');
         //
         if ($this->config->get('config_checkout_id') && $this->config->get('config_account_id')) {
             $this->load->model('catalog/information');
@@ -345,10 +344,10 @@ class ControllerCheckoutCheckoutetm extends Controller {
         if(!isset($this->session->data['shipping_methods']) || empty($this->session->data['shipping_methods']) || !isset($this->session->data['shipping_method'])){
             $this->data['noshippingstatus']=1; 
         }
-        $this->data['menushipping'] = $this->etmPerfChild('checkout/shipping_postcodes/menushipping');
+        $this->data['menushipping'] = $this->getChild('checkout/shipping_postcodes/menushipping');
         $this->data['also_bought']='';
         if(!isset($this->session->data['offerordering'])){
-            $this->data['also_bought'] = $this->etmPerfChild('module/also_bought');
+            $this->data['also_bought'] = $this->getChild('module/also_bought');
         }
         $this->data['back_menu'] = $this->config->get('config_url') . 'menu#';
         $this->data['order_total'] = $this->cart->getTotal();
@@ -372,59 +371,7 @@ class ControllerCheckoutCheckoutetm extends Controller {
             'module/freeproducts',
         );
 
-        $etm_render_start = microtime(true);
-        if (isset($this->request->get['etm_perf'])) {
-            // Timing run only: render the layout children one by one (same as render()
-            // does internally: data[basename(route)] = getChild(route)) so each is timed.
-            foreach ($this->children as $etm_child) {
-                $this->data[basename($etm_child)] = $this->etmPerfChild($etm_child);
-            }
-            $this->children = array();
-        }
-        $etm_output = $this->render();
-        if (isset($this->request->get['etm_perf'])) {
-            // Opt-in timing report (?etm_perf=1), appended as an HTML comment only.
-            $etm_lines = array();
-            foreach ($this->etmPerfTimes as $etm_route => $etm_ms) {
-                $etm_lines[] = str_pad($etm_route, 48) . ' ' . $etm_ms . ' ms';
-            }
-            // Inner timings recorded by other controllers (totals, payment checks, shipping quotes).
-            $etm_agg = array();
-            if (!empty($GLOBALS['etm_perf']) && is_array($GLOBALS['etm_perf'])) {
-                foreach ($GLOBALS['etm_perf'] as $etm_row) {
-                    if (!isset($etm_agg[$etm_row[0]])) {
-                        $etm_agg[$etm_row[0]] = array(0, 0);
-                    }
-                    $etm_agg[$etm_row[0]][0] += $etm_row[1];
-                    $etm_agg[$etm_row[0]][1]++;
-                }
-            }
-            $etm_lines[] = '--- inner (sum ms x calls) ---';
-            foreach ($etm_agg as $etm_label => $etm_v) {
-                if ($etm_v[0] >= 0.002 || $etm_v[1] > 1) {
-                    $etm_lines[] = str_pad($etm_label, 48) . ' ' . round($etm_v[0] * 1000, 1) . ' ms x' . $etm_v[1];
-                }
-            }
-            $etm_lines[] = '---';
-            $etm_lines[] = str_pad('controller before render (incl. above)', 48) . ' ' . round(($etm_render_start - $etm_perf_start) * 1000, 1) . ' ms';
-            $etm_lines[] = str_pad('render (header, footer, column_left, freeproducts, template)', 48) . ' ' . round((microtime(true) - $etm_render_start) * 1000, 1) . ' ms';
-            $etm_lines[] = str_pad('total checkoutetm/index', 48) . ' ' . round((microtime(true) - $etm_perf_start) * 1000, 1) . ' ms';
-            $etm_output .= "\n<!-- etm_perf\n" . implode("\n", $etm_lines) . "\n-->";
-        }
-        $this->response->setOutput($etm_output);
-    }
-
-    // Timing wrapper for getChild(), used only to build the ?etm_perf=1 report.
-    private $etmPerfTimes = array();
-    private function etmPerfChild($child, $args = array()) {
-        $etm_t = microtime(true);
-        $etm_html = $this->getChild($child, $args);
-        $etm_key = $child;
-        while (isset($this->etmPerfTimes[$etm_key])) {
-            $etm_key .= "'";
-        }
-        $this->etmPerfTimes[$etm_key] = round((microtime(true) - $etm_t) * 1000, 1);
-        return $etm_html;
+        $this->response->setOutput($this->render());
     }
 
     public function country() {
