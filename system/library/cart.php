@@ -36,8 +36,8 @@ class Cart {
      *
      * Cache the result for the rest of the request, keyed on every input the build
      * reads. Any change to those inputs rebuilds exactly as before. Only used on GET
-     * requests (page loads); POST requests (add to cart, order confirm, payment
-     * callbacks) always rebuild, as before.
+     * requests (page loads) and the checkout page's own form POST; other POST requests
+     * (add to cart, order confirm, payment callbacks) always rebuild, as before.
      */
     public function getProducts($cart=array()) {
         $etm_key = $this->etmProductsCacheKey();
@@ -53,7 +53,7 @@ class Cart {
     }
 
     private function etmProductsCacheKey() {
-        if (isset($_SERVER['REQUEST_METHOD']) && strtoupper($_SERVER['REQUEST_METHOD']) !== 'GET') {
+        if (isset($_SERVER['REQUEST_METHOD']) && strtoupper($_SERVER['REQUEST_METHOD']) !== 'GET' && !$this->etmIsCheckoutPagePost()) {
             return null;
         }
         $etm_logged = $this->customer->isLogged();
@@ -67,6 +67,22 @@ class Cart {
             $this->config->get('config_customer_group_id'),
             $this->config->get('config_language_id'),
         )));
+    }
+
+    /*
+     * The basket "Checkout" button submits #sidebarcheckoutform (POST) to the checkout
+     * page; that request only stores delivery_method / order_requested_time in the
+     * session (not inputs of getProducts) and renders the page, so it can use the cache.
+     * Measured on live with the Ramen & Katsu Deal: this POST took 7.9 s to first byte
+     * while a GET of the same page took ~0.8 s. Other POST routes (add to cart,
+     * checkout/confirmetm, payment callbacks) still rebuild on every call.
+     */
+    private function etmIsCheckoutPagePost() {
+        if (isset($_GET['route'])) {
+            return $_GET['route'] === 'checkout/checkoutetm';
+        }
+        $etm_path = isset($_SERVER['REQUEST_URI']) ? parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) : '';
+        return is_string($etm_path) && (bool) preg_match('#/checkoutetm/?$#', $etm_path);
     }
 
     // The original getProducts() body, unchanged.
