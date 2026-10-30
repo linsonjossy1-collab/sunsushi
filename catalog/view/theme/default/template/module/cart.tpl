@@ -273,10 +273,17 @@
 
     <?php } ?>
 
-    function productminuspopup1(key, quantity, product_id) {
+    function productminuspopup1(key, quantity, product_id, name, price) {
+        // Callers pass (key, qty, product_id, name, price); name/price/id were used below
+        // without being declared ("ReferenceError: price is not defined").
+        var id = product_id;
+        name = name || '';
+        price = parseFloat(price) || 0;
         if (quantity == 1) {
-            $('#product-minus-popup').modal('show')
-                .one('click', '#delete_item', function(e) {
+            // Drop a Delete handler left over from a popup that was cancelled, otherwise
+            // the next Delete would also remove that earlier item.
+            $('#product-minus-popup').off('click.etmminus').modal('show')
+                .one('click.etmminus', '#delete_item', function(e) {
                     //$form.trigger('submit');
                     $('#cart').load('index.php?route=module/cart #cart > *', {
                         'minus1': key,
