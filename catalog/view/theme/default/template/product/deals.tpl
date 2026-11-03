@@ -139,6 +139,13 @@
                     if($('#btnbndlecart').hasClass('disabled')) {
                         return;
                     }
+                    // The ADD button that called us (it has no id of its own).
+                    var etmCall = "bundleprodttocart('" + main_id + "','" + bundledidval + "')";
+                    var $dealBtn = $('.popupcartbtn').filter(function () { return ($(this).attr('onclick') || '').replace(/[\s;]/g, '') === etmCall; });
+                    if ($dealBtn.hasClass('etm-btn-loading')) {
+                        return;
+                    }
+                    if (window.etmBtnLoading) { etmBtnLoading($dealBtn, true); }
                     $('#btnbndlecart').addClass('disabled');
                     //$('#bundled_product_detail_div_'+main_id+' .error').remove();    
                     if(addedbundqty==(totbundledty-1)){
@@ -196,10 +203,10 @@
                                 location = 'menu';
                             }
                         }            
+                    }).always(function () {
+                        // Stop the loader on success, validation error and network error.
                         $('#btnbndlecart').removeClass('disabled');
-                    }).fail(function (jqXHR, textStatus) 
-                    {
-                        $('#btn'+main_id+'_'+bundle_id).removeClass('disabled');
+                        if (window.etmBtnLoading) { etmBtnLoading($dealBtn, false); }
                     });
                 }
                 function closebundlepopup(main_id){

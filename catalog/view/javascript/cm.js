@@ -205,20 +205,23 @@ function addToCompare(product_id) {
 // so the customer can see the tap registered. It always stops when the
 // request finishes (success, validation error or network error), and a second
 // tap while it is running is ignored so the item is not added twice.
-function etmPopupCartBtn(div_id, loading) {
-    var id = String(div_id || '').replace(/^productaccordion_/, '');
-    var $btn = $('.popupcartbtn').filter(function () { return $(this).attr('para') === id; });
-    if (!$btn.length) { return $btn; }
+function etmBtnLoading($btn, loading) {
+    if (!$btn || !$btn.length) { return $btn; }
     if (!document.getElementById('etm-btn-loader-css')) {
         $('head').append('<style id="etm-btn-loader-css">.etm-btn-loading{pointer-events:none;opacity:.8;cursor:wait}.etm-btn-spinner{display:inline-block;width:14px;height:14px;margin-right:6px;vertical-align:-2px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:etm-btn-spin .7s linear infinite}@keyframes etm-btn-spin{to{transform:rotate(360deg)}}</style>');
     }
     if (loading === true) {
         $btn.addClass('etm-btn-loading').attr('aria-busy', 'true');
-        if (!$btn.find('.etm-btn-spinner').length) { $btn.prepend('<span class="etm-btn-spinner" aria-hidden="true"></span>'); }
+        $btn.each(function () { if (!$(this).find('.etm-btn-spinner').length) { $(this).prepend('<span class="etm-btn-spinner" aria-hidden="true"></span>'); } });
     } else if (loading === false) {
         $btn.removeClass('etm-btn-loading').removeAttr('aria-busy').find('.etm-btn-spinner').remove();
     }
     return $btn;
+}
+function etmPopupCartBtn(div_id, loading) {
+    var id = String(div_id || '').replace(/^productaccordion_/, '');
+    var $btn = $('.popupcartbtn').filter(function () { return $(this).attr('para') === id; });
+    return etmBtnLoading($btn, loading);
 }
 function etmAddtocart(div_id){
     if (etmPopupCartBtn(div_id).hasClass('etm-btn-loading')) { return; }

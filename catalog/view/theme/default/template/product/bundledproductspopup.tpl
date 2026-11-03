@@ -512,10 +512,13 @@
                 function bundleItemtocart(main_id,bundle_id,all)
                 {
                     //$('.bundled_prodt_options').hide();  
-                    if($('#btnbndlecart').hasClass('disabled')) {
+                    // The same id can exist once per deal popup on the menu page.
+                    var $dealBtn = $('[id="btnbndlecart"]');
+                    if($dealBtn.hasClass('disabled')) {
                         return;
                     }
-                    $('#btnbndlecart').addClass('disabled');
+                    $dealBtn.addClass('disabled');
+                    if (window.etmBtnLoading) { etmBtnLoading($dealBtn, true); }
                     $('#bundled_product_detail_div_'+main_id+' .error').remove();    
                     if(addedbundqty==(totbundledty-1)){
                         $( "#bundled_prodtoptions_div_"+main_id+'_' + bundledidval).after('<input type="hidden" name="dealcomplete" value="<?php echo $main_product_id; ?>">');
@@ -568,10 +571,13 @@
                                 });
                             }
                         }            
-                        $('#btnbndlecart').removeClass('disabled');
                     }).fail(function (jqXHR, textStatus) 
                     {
                         $('#btn'+main_id+'_'+bundle_id).removeClass('disabled');
+                    }).always(function () {
+                        // Stop the loader on success, validation error and network error.
+                        $dealBtn.removeClass('disabled');
+                        if (window.etmBtnLoading) { etmBtnLoading($dealBtn, false); }
                     });
                 }
                 function closebundlepopup(main_id){
